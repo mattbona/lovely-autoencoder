@@ -1,23 +1,20 @@
-#!/usr/bin/python3
-
-###############################
-## AUTOENCODER with external  #
-#  cross-validation           #
-## by:  T30                   #
-###############################
-
-import csv
-#import pickle
-import math
-
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 from torch.utils.data.dataset import random_split
+import csv
+import math
+import os
+import numpy as np
 import matplotlib.pyplot as plt
 
 torch.set_num_threads(2)
+torch.manual_seed(42) # for determinism
 
-dataset_path="./dataset/"
+#check if encoding dir exists
+if not os.path.exists('encoding'):
+    os.makedirs('encoding')
+
+dataset_path="../dataset/"
 test_file="test" # Name of the .dat test file in the dataset dir
 train_file="train" # Name of the .dat train file in the dataset dir
 
@@ -27,15 +24,9 @@ D_out = 45   # Dimension of the OUTPUT LAYER
 H1 = 50     # Dimension of the fisrt HIDDEN LAYER
 H = 90        # Dimension of the central HIDDEN LAYER
 
-N_epochs = 10000
-
 LEARNING_RATE = 0.001
 MOMENTUM = 0.5
 WEIGHT_DECAY = 1E-5
-
-folds_number = 13 # Number of folds for the external cross validation
-
-torch.manual_seed(42)
 
 model = torch.nn.Sequential(
     torch.nn.Linear(D_in, H1, bias=True),
@@ -61,7 +52,6 @@ def init_weights(m):	# Funzione che inizializza i pesi dei layer nn.Linear() del
 #param_file = "params_"+param_file+".pt"
 model.load_state_dict(torch.load(param_file))
 """
-################################################################################
 
 ### LOADING DATA FROM DATABASE #################################################
 print("\nLoading data for training and testing ...")
@@ -89,7 +79,10 @@ test_labels = testset[:][1]
 
 print("Loading of data completed.")
 
-################################################################################
+### CREATION AND GROUPING OF THE DIFFERENT FOLDS ###############################
+print("\nStart creation, grouping and training of/on the different folds...")
+folds_number = 13 # Number of folds for the external cross validation
+N_epochs = 10000
 
 tr_sum = [0]*N_epochs
 val_sum = [0]*N_epochs
@@ -97,10 +90,6 @@ test_sum = [0]*N_epochs
 tr_sum2 = [0]*N_epochs
 val_sum2 = [0]*N_epochs
 test_sum2 = [0]*N_epochs
-
-### CREATION AND GROUPING OF THE DIFFERENT FOLDS ###############################
-print("\nStart creation, grouping and training of/on the different folds...")
-
 for fold in range(folds_number):
     print("\n### Grouping of folds number %d ###" % (fold+1))
 
