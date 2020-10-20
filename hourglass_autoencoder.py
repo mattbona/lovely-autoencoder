@@ -59,8 +59,8 @@ model.load_state_dict(torch.load(param_file))
 ### LOADING DATA FROM DATABASE #################################################
 print("\nLoading data for training and testing ...")
 ## Load data for the first time from a regular file .dat
-train_patterns_list = []
-test_patterns_list = []
+train_patterns_list = variables.train_patterns_list
+test_patterns_list = variables.test_patterns_list
 #read and select desired batch
 with open(dataset_path+train_file+'.dat') as csvfile:
     readCSV = csv.reader(csvfile, delimiter=' ')
@@ -87,12 +87,12 @@ print("\nStart creation, grouping and training of/on the different folds...")
 folds_number = params.FOLDS_NUMBER # Number of folds for the external cross validation
 N_epochs = params.EPOCHS_NUMBER
 
-tr_sum = [0]*N_epochs
-val_sum = [0]*N_epochs
-test_sum = [0]*N_epochs
-tr_sum2 = [0]*N_epochs
-val_sum2 = [0]*N_epochs
-test_sum2 = [0]*N_epochs
+train_sum = variables.train_sum
+val_sum = variables.val_sum
+test_sum = variables.test_sum
+train_sum2 = variables.train_sum2
+val_sum2 = variables.val_sum2
+test_sum2 = variables.test_sum2
 for fold in range(folds_number):
     print("\n### Grouping of folds number %d ###" % (fold+1))
 
@@ -146,8 +146,8 @@ for fold in range(folds_number):
         loss_test = loss_fn(test_prediction,test_labels)
         print('[folds-group: %d, epoch: %d]\t train loss: %.4f\t validation loss: %.4f' % (fold+1, epoch + 1, loss_train.item(), loss_val.item()))
 
-        tr_sum[epoch]+=(loss_train.item())
-        tr_sum2[epoch]+=(loss_train.item())**2
+        train_sum[epoch]+=(loss_train.item())
+        train_sum2[epoch]+=(loss_train.item())**2
         val_sum[epoch]+=(loss_val.item())
         val_sum2[epoch]+=(loss_val.item())**2
         test_sum[epoch]+=(loss_train.item())
@@ -178,9 +178,9 @@ outputfile1 = open('epoch_loss.dat', 'w')
 
 for i in range(N_epochs):
 	# loss
-    tr_mean=tr_sum[i]/folds_number
+    tr_mean=train_sum[i]/folds_number
     if folds_number > 1:
-        tr_dev_std=math.sqrt((tr_sum2[i]/folds_number-tr_mean*tr_mean)/(folds_number-1))
+        tr_dev_std=math.sqrt((train_sum2[i]/folds_number-tr_mean*tr_mean)/(folds_number-1))
     else:
         tr_dev_std=0
 
