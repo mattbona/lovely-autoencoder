@@ -1,6 +1,7 @@
 import os
 import sys
 import src.params as params
+import torch
 
 def check_dirs():
     if not os.path.exists(params.RESULTS_DIR):
@@ -15,3 +16,30 @@ def check_dirs():
                 os.mkdir(params.ENCODING_DIR)
             except:
                 sys.exit('ERROR: Cannot create directory for the encoding of the binding sites.')
+
+def get_hourglass_autoencoder(input_dim, central_hidden_dim, activation_func, is_bias=True):
+    first_hidden_dim = int(input_dim*1.1)
+
+    model = torch.nn.Sequential()
+    model.add_module('input_linear', torch.nn.Linear(input_dim, first_hidden_dim, bias=is_bias))
+    if activation_func == 'LeakyReLU':
+        model.add_module('leakyrelu', torch.nn.LeakyReLU())
+    if activation_func == 'ReLU':
+        model.add_module('relu', torch.nn.ReLU())
+    model.add_module('hidden_linear1', torch.nn.Linear(first_hidden_dim, central_hidden_dim, bias=is_bias))
+    if activation_func == 'LeakyReLU':
+        model.add_module('encode', torch.nn.LeakyReLU())
+    if activation_func == 'ReLU':
+        model.add_module('encode', torch.nn.ReLU())
+    model.add_module('hidden_linear2', torch.nn.Linear(central_hidden_dim, first_hidden_dim, bias=is_bias))
+    if activation_func == 'LeakyReLU':
+        model.add_module('decode', torch.nn.LeakyReLU())
+    if activation_func == 'ReLU':
+        model.add_module('decode', torch.nn.ReLU())
+    model.add_module('last_hidden_linear', torch.nn.Linear(first_hidden_dim, input_dim, bias=is_bias))
+    if activation_func == 'LeakyReLU':
+        model.add_module('leakyrelu', torch.nn.LeakyReLU())
+    if activation_func == 'ReLU':
+        model.add_module('relu', torch.nn.ReLU())
+
+    return model

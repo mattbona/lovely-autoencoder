@@ -4,7 +4,6 @@ FOLDS_NUMBER = 13
 # Model definition
 INPUT_DIMENSION = 45 # Input: superiors triangles of distances matrices of different binding sites
 CENTRAL_HIDDEN_DIMENSION = 45
-HIDDEN1_DIMENSION = 0
 
 # Training parameters
 EPOCHS_NUMBER = 10

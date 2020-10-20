@@ -23,26 +23,11 @@ if __name__ == '__main__':
     test_file= params.TEST_FILE # Name of the .dat test file in the dataset dir
     train_file= params.TRAIN_FILE # Name of the .dat train file in the dataset dir
 
-    ### MODEL DEFINITION ########################
-    D_in = params.INPUT_DIMENSION    # Dimension of the INPUT LAYER: distance matrix of binding sites
-    D_out = params.INPUT_DIMENSION   # Dimension of the OUTPUT LAYER
-    H1 = int(params.INPUT_DIMENSION*1.1)    # Dimension of the fisrt HIDDEN LAYER
-    H = params.CENTRAL_HIDDEN_DIMENSION        # Dimension of the central HIDDEN LAYER
-
     LEARNING_RATE = params.LEARNING_RATE
     MOMENTUM = params.MOMENTUM
     WEIGHT_DECAY = params.WEIGHT_DECAY
 
-    model = torch.nn.Sequential(
-        torch.nn.Linear(D_in, H1, bias=True),
-        torch.nn.LeakyReLU(),
-        torch.nn.Linear(H1, H, bias=True),
-        torch.nn.LeakyReLU(),
-        torch.nn.Linear(H, H1, bias=True),
-        torch.nn.LeakyReLU(),
-        torch.nn.Linear(H1, D_out, bias=True),
-    )
-
+    model = util.get_hourglass_autoencoder(params.INPUT_DIMENSION,params.CENTRAL_HIDDEN_DIMENSION,params.ACTIVATION_FUNCTION,params.BIAS)
     loss_fn = torch.nn.MSELoss(reduction='mean')
     optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
 
