@@ -43,3 +43,13 @@ def get_hourglass_autoencoder(input_dim, central_hidden_dim, activation_func, is
         model.add_module('relu', torch.nn.ReLU())
 
     return model
+
+def get_loss_function(loss):
+    if loss == 'mse':
+        return torch.nn.MSELoss(reduction='mean')
+
+def get_optimizer(model, opt, learning_rate=0.001, moment=0.5, wd=1E-5):
+    if opt == 'sgd':
+        return torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=moment, weight_decay=wd)
+    if opt == 'adam':
+        return torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=wd)

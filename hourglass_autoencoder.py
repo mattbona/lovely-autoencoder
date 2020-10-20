@@ -28,8 +28,8 @@ if __name__ == '__main__':
     WEIGHT_DECAY = params.WEIGHT_DECAY
 
     model = util.get_hourglass_autoencoder(params.INPUT_DIMENSION,params.CENTRAL_HIDDEN_DIMENSION,params.ACTIVATION_FUNCTION,params.BIAS)
-    loss_fn = torch.nn.MSELoss(reduction='mean')
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
+    loss_fn = util.get_loss_function(params.LOSS)
+    optimizer = util.get_optimizer(model, params.OPTIMIZER, params.LEARNING_RATE, params.MOMENTUM, params.WEIGHT_DECAY)
 
     def init_weights(m):	# Funzione che inizializza i pesi dei layer nn.Linear() della rete definita con la funzione nn.Sequential()
         if type(m) == torch.nn.Linear:
