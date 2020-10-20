@@ -24,5 +24,6 @@ TEST_FILE = 'test'   # Name of the .dat test file in the dataset dir
 # Working dirs
 RESULTS_DIR = './results/'
 
-PRINT_ENCODING = False
-ENCODING_DIR = './results/encoding'
+PRINT_ENCODING = True
+PRINT_NUMBER = 10
+ENCODING_DIR = './results/encoding/'

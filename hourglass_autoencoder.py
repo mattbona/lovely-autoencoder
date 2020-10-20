@@ -11,13 +11,14 @@ import matplotlib.pyplot as plt
 torch.set_num_threads(2)
 torch.manual_seed(42) # for determinism
 
-import params, variables
-
-#check if encoding dir exists
-if not os.path.exists('encoding'):
-    os.makedirs('encoding')
+import src. params as params
+import src.variables as variables
+import src.ae_utils as util
 
 if __name__ == '__main__':
+
+    util.check_dirs()
+
     dataset_path= params.DATASET_PATH
     test_file= params.TEST_FILE # Name of the .dat test file in the dataset dir
     train_file= params.TRAIN_FILE # Name of the .dat train file in the dataset dir
@@ -168,7 +169,7 @@ if __name__ == '__main__':
                 #plt.ylim((0,1))
                 plt.xlabel('H1 value')
                 plt.ylabel('H2 value')
-                plt.savefig("encoding/encoding_plot_fold{:03d}_ep{:03d}.png".format(fold,epoch))
+                plt.savefig(params.ENCODING_DIR+"encoding_plot_fold{:03d}_ep{:03d}.png".format(fold,epoch))
                 plt.clf()  # Clear the figure for the next loop
 
         print('\nTraining completed.')
