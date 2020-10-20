@@ -4,29 +4,32 @@ from torch.utils.data.dataset import random_split
 import csv
 import math
 import os
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
 torch.set_num_threads(2)
 torch.manual_seed(42) # for determinism
 
+import params, variables
+
 #check if encoding dir exists
 if not os.path.exists('encoding'):
     os.makedirs('encoding')
 
-dataset_path="../dataset/"
-test_file="test" # Name of the .dat test file in the dataset dir
-train_file="train" # Name of the .dat train file in the dataset dir
+dataset_path= params.DATASET_PATH
+test_file= params.TEST_FILE # Name of the .dat test file in the dataset dir
+train_file= params.TRAIN_FILE # Name of the .dat train file in the dataset dir
 
 ### MODEL DEFINITION ########################
-D_in = 45    # Dimension of the INPUT LAYER: distance matrix of binding sites
-D_out = 45   # Dimension of the OUTPUT LAYER
-H1 = 50     # Dimension of the fisrt HIDDEN LAYER
-H = 90        # Dimension of the central HIDDEN LAYER
+D_in = params.INPUT_DIMENSION    # Dimension of the INPUT LAYER: distance matrix of binding sites
+D_out = params.INPUT_DIMENSION   # Dimension of the OUTPUT LAYER
+H1 = int(params.INPUT_DIMENSION*1.1)    # Dimension of the fisrt HIDDEN LAYER
+H = params.CENTRAL_HIDDEN_DIMENSION        # Dimension of the central HIDDEN LAYER
 
-LEARNING_RATE = 0.001
-MOMENTUM = 0.5
-WEIGHT_DECAY = 1E-5
+LEARNING_RATE = params.LEARNING_RATE
+MOMENTUM = params.MOMENTUM
+WEIGHT_DECAY = params.WEIGHT_DECAY
 
 model = torch.nn.Sequential(
     torch.nn.Linear(D_in, H1, bias=True),
@@ -81,8 +84,8 @@ print("Loading of data completed.")
 
 ### CREATION AND GROUPING OF THE DIFFERENT FOLDS ###############################
 print("\nStart creation, grouping and training of/on the different folds...")
-folds_number = 13 # Number of folds for the external cross validation
-N_epochs = 10000
+folds_number = params.FOLDS_NUMBER # Number of folds for the external cross validation
+N_epochs = params.EPOCHS_NUMBER
 
 tr_sum = [0]*N_epochs
 val_sum = [0]*N_epochs
