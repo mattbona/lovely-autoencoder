@@ -54,25 +54,15 @@ if __name__ == '__main__':
 
             util.cumulate_loss(fold, epoch, model, loss_fn, train_patterns, validation_patterns, test_patterns)
 
-            # Print encoding plot
-            if epoch % 100 == 0:
-                patterns = train_patterns.type(torch.FloatTensor)
-
-                linear_layer = model[0](patterns)
-                hidden_layer1 = model[1](linear_layer)
-                hidden_layer2 = model[2](hidden_layer1)
-
-                plt.scatter(hidden_layer2.data[:, 0], hidden_layer2.data[:, 1], s=0.5)
-                plt.title("fold: {:3d}, epoch: {:3d}".format(fold, epoch))
-                #plt.xlim((0,1))
-                #plt.ylim((0,1))
-                plt.xlabel('H1 value')
-                plt.ylabel('H2 value')
-                plt.savefig(params.ENCODING_DIR+"encoding_plot_fold{:03d}_ep{:03d}.png".format(fold,epoch))
-                plt.clf()  # Clear the figure for the next loop
+            if params.PRINT_ENCODING == True:
+                if (epoch+1) % params.PRINT_NUMBER == 0:
+                    save_encoding(fold, epoch, model, train_patterns)
 
         print('\nTraining completed.')
 
+    if params.PRINT_ENCODING == True:
+        print('Printing encoding plots...')
+        print_encoding_plot()
     ### COMPUTING THA ACCURACY OF THE SINGLE FOLD ##################################
 
     outputfile1 = open('epoch_loss.dat', 'w')

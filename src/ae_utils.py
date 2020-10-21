@@ -129,3 +129,24 @@ def cumulate_loss(fold, epoch, model, loss_fn, train_patterns, validation_patter
     if len(test_patterns) != 0:
         variables.test_sum[epoch] += (loss_train.item())
         variables.test_sum2[epoch] += (loss_train.item())**2
+
+def save_encoding(fold, epoch, model, train_patterns):
+    x = train_patterns
+    for module_name, module in model.named_children():
+        y = module(x)
+        x = y
+        if module_name == 'encode':
+            variables.encoding.append({'fold': fold, 'epoch': epoch, 'h1': y.data[:, 0], 'h2': y.data[:, 0]})
+
+def print_encoding_plot():
+    for i, encode in enumerate(variables.encoding):
+
+        plt.scatter(encode['h1'], encode['h2'], s=0.5)
+
+        plt.title("fold: {:3d}, epoch: {:3d}".format((encode['fold']+1),(encode['epoch']+1)))
+        #plt.xlim((0,1))
+        #plt.ylim((0,1))
+        plt.xlabel('H1 value')
+        plt.ylabel('H2 value')
+        plt.savefig(params.ENCODING_DIR+"encoding_plot_fold{:03d}_ep{:03d}.png".format((encode['fold']+1),(encode['epoch']+1)))
+        plt.clf()  # Clear the figure for the next loop    
