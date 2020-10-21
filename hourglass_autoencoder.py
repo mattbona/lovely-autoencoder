@@ -23,18 +23,9 @@ if __name__ == '__main__':
     test_file= params.TEST_FILE # Name of the .dat test file in the dataset dir
     train_file= params.TRAIN_FILE # Name of the .dat train file in the dataset dir
 
-    LEARNING_RATE = params.LEARNING_RATE
-    MOMENTUM = params.MOMENTUM
-    WEIGHT_DECAY = params.WEIGHT_DECAY
-
     model = util.get_hourglass_autoencoder(params.INPUT_DIMENSION,params.CENTRAL_HIDDEN_DIMENSION,params.ACTIVATION_FUNCTION,params.BIAS)
     loss_fn = util.get_loss_function(params.LOSS)
     optimizer = util.get_optimizer(model, params.OPTIMIZER, params.LEARNING_RATE, params.MOMENTUM, params.WEIGHT_DECAY)
-
-    def init_weights(m):	# Funzione che inizializza i pesi dei layer nn.Linear() della rete definita con la funzione nn.Sequential()
-        if type(m) == torch.nn.Linear:
-            torch.nn.init.xavier_uniform_(m.weight)
-            m.bias.data.fill_(0.01)
 
     ### MAYBE LOAD PREVIOUSLY TRAINED PARAMETERS
     """
@@ -112,7 +103,7 @@ if __name__ == '__main__':
     ### TRAINING ON THE SINGLE FOLDS-GROUP #########################################
         print("\nTraining on the single grouping of folds...")
 
-        model.apply(init_weights)	# weights initialization
+        model.apply(util.initialize_models_weights)	# weights initialization
         for epoch in range(N_epochs):  # loop over the dataset multiple times
 
             # zero the parameter gradients

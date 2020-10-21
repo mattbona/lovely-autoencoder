@@ -53,3 +53,8 @@ def get_optimizer(model, opt, learning_rate=0.001, moment=0.5, wd=1E-5):
         return torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=moment, weight_decay=wd)
     if opt == 'adam':
         return torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=wd)
+
+def initialize_models_weights(layer):
+    if type(layer) == torch.nn.Linear:
+        torch.nn.init.xavier_uniform_(layer.weight)
+        layer.bias.data.fill_(0.01)
