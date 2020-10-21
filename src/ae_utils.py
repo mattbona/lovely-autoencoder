@@ -1,6 +1,8 @@
 import os
 import sys
 import csv
+import math
+import matplotlib.pyplot as plt
 
 import torch
 from torch.utils.data import TensorDataset, DataLoader
@@ -130,6 +132,34 @@ def cumulate_loss(fold, epoch, model, loss_fn, train_patterns, validation_patter
         variables.test_sum[epoch] += (loss_train.item())
         variables.test_sum2[epoch] += (loss_train.item())**2
 
+def write_on_file_average_stddev_losses(file_path, write_test=False):
+    outputfile = open(file_path, 'w')
+
+    for i in range(params.EPOCHS_NUMBER):
+        train_mean = variables.train_sum[i]/params.FOLDS_NUMBER
+        train_dev_std = math.sqrt((variables.train_sum2[i]/params.FOLDS_NUMBER-train_mean*train_mean)/(params.FOLDS_NUMBER-1))
+
+        val_mean = variables.val_sum[i]/params.FOLDS_NUMBER
+        val_dev_std = math.sqrt((variables.val_sum2[i]/params.FOLDS_NUMBER-val_mean*val_mean)/(params.FOLDS_NUMBER-1))
+
+        if write_test == True:
+            test_mean = variables.test_sum[i]/params.FOLDS_NUMBER
+            test_dev_std = math.sqrt((variables.test_sum2[i]/params.FOLDS_NUMBER-test_mean*test_mean)/(params.FOLDS_NUMBER-1))
+
+        outputfile.write( str(i)+" ")
+        outputfile.write( str(train_mean)+" ")
+        outputfile.write( str(train_dev_std)+" ")
+        outputfile.write( str(val_mean)+" ")
+
+        if write_test == True:
+            outputfile.write( str(val_dev_std)+" ")
+            outputfile.write( str(test_mean)+" ")
+            outputfile.write( str(test_dev_std)+"\n")
+        else:
+            outputfile.write( str(val_dev_std)+"\n")
+
+    outputfile.close()
+
 def save_encoding(fold, epoch, model, train_patterns):
     x = train_patterns
     for module_name, module in model.named_children():
@@ -149,4 +179,4 @@ def print_encoding_plot():
         plt.xlabel('H1 value')
         plt.ylabel('H2 value')
         plt.savefig(params.ENCODING_DIR+"encoding_plot_fold{:03d}_ep{:03d}.png".format((encode['fold']+1),(encode['epoch']+1)))
-        plt.clf()  # Clear the figure for the next loop    
+        plt.clf()  # Clear the figure for the next loop

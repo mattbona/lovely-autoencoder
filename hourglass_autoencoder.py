@@ -32,6 +32,8 @@ if __name__ == '__main__':
     # load training and test (if present) data
     util.append_data_in_lists(variables.train_patterns_list, variables.test_patterns_list)
     test_patterns = torch.FloatTensor(variables.test_patterns_list)
+    if len(test_patterns) != 0:
+        is_test = True
 
     ### CREATION AND GROUPING OF THE DIFFERENT FOLDS ###############################
     print("\nStart creation, grouping and training of/on the different folds...")
@@ -60,42 +62,11 @@ if __name__ == '__main__':
 
         print('\nTraining completed.')
 
+    util.write_on_file_average_stddev_losses(params.RESULTS_DIR+'epoch_loss.dat', write_test=is_test)
+
     if params.PRINT_ENCODING == True:
         print('Printing encoding plots...')
-        print_encoding_plot()
-    ### COMPUTING THA ACCURACY OF THE SINGLE FOLD ##################################
-
-    outputfile1 = open('epoch_loss.dat', 'w')
-
-    for i in range(N_epochs):
-    	# loss
-        tr_mean=train_sum[i]/folds_number
-        if folds_number > 1:
-            tr_dev_std=math.sqrt((train_sum2[i]/folds_number-tr_mean*tr_mean)/(folds_number-1))
-        else:
-            tr_dev_std=0
-
-        val_mean=val_sum[i]/folds_number
-        if folds_number > 1:
-            val_dev_std=math.sqrt((val_sum2[i]/folds_number-val_mean*val_mean)/(folds_number-1))
-        else:
-            val_dev_std=0
-
-        test_mean=test_sum[i]/folds_number
-        if folds_number > 1:
-            test_dev_std=math.sqrt((test_sum2[i]/folds_number-test_mean*test_mean)/(folds_number-1))
-        else:
-            val_dev_std=0
-
-        outputfile1.write( str(i)+" ")
-        outputfile1.write( str(tr_mean)+" ")
-        outputfile1.write( str(tr_dev_std)+" ")
-        outputfile1.write( str(val_mean)+" ")
-        outputfile1.write( str(val_dev_std)+" ")
-        outputfile1.write( str(test_mean)+" ")
-        outputfile1.write( str(test_dev_std)+"\n")
-
-    outputfile1.close()
+        util.print_encoding_plot()
 
     ### PRINT PARAMETERS ###########################################################
     """
