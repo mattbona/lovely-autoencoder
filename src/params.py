@@ -1,3 +1,7 @@
+THREADS_NUMBER = 2
+SEED = 42
+DETERMINISM = True
+
 # External cross-validation parameters
 FOLDS_NUMBER = 13
 
@@ -19,10 +23,15 @@ WEIGHT_DECAY = 1E-5
 
 DATASET_PATH = './dataset/' # Path to train and test files
 TRAIN_FILE = 'train' # Name of the .dat train file in the dataset dir
+
+TEST = True
 TEST_FILE = 'test'   # Name of the .dat test file in the dataset dir
 
 # Working dirs
 RESULTS_DIR = './results/'
+
+PRINT_MODEL_PARAMETERS = False
+PARAMETERS_DIR = './results/network_parameters'
 
 PRINT_ENCODING = False
 PRINT_NUMBER = 10

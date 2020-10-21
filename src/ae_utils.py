@@ -9,8 +9,20 @@ import src.variables as variables
 
 import torch
 from torch.utils.data import TensorDataset, DataLoader
-torch.set_num_threads(2)
-torch.manual_seed(42) # for determinism
+
+torch.set_num_threads(params.THREADS_NUMBER)
+if params.DETERMINISM ==  True: torch.manual_seed(params.SEED) # for determinism
+
+def load_model_parameters(model, param_file):
+    model.load_state_dict(torch.load(param_file))
+
+def save_model_parameters(model, param_file):
+    torch.save(model.state_dict(), param_file)
+
+def print_model_parameters(model):
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            np.savetxt(params.PARAMETERS_DIR+"/module_"+name+"_parameters.txt", param.data, delimiter='\n ')
 
 def check_dirs():
     if not os.path.exists(params.RESULTS_DIR):
@@ -18,6 +30,13 @@ def check_dirs():
             os.mkdir(params.RESULTS_DIR)
         except:
             sys.exit('ERROR: Cannot create directory for results.')
+
+    if params.PRINT_MODEL_PARAMETERS == True:
+        if not os.path.exists(params.PARAMETERS_DIR):
+            try:
+                os.mkdir(params.PARAMETERS_DIR)
+            except:
+                sys.exit('ERROR: Cannot create directory for the parameters of the model.')
 
     if params.PRINT_ENCODING == True:
         if not os.path.exists(params.ENCODING_DIR):
@@ -79,15 +98,17 @@ def append_data_in_lists(train_data_list, test_data_list):
     else:
         sys.exit("ERROR: train file not found! Check the path.")
 
-    test_file_path = params.DATASET_PATH + params.TEST_FILE + '.dat'
-    if os.path.isfile(test_file_path) == True:
-        with open(test_file_path) as csvfile:
-            readCSV = csv.reader(csvfile, delimiter=' ')
-            for i,row in enumerate(readCSV):
-                row = list(map(float,row[:]))
-                test_data_list.append(row)
-    else:
-        print("WARNING: no test file detected. Proceding without test.")
+    if params.TEST == True:
+        test_file_path = params.DATASET_PATH + params.TEST_FILE + '.dat'
+        if os.path.isfile(test_file_path) == True:
+            with open(test_file_path) as csvfile:
+                readCSV = csv.reader(csvfile, delimiter=' ')
+                for i,row in enumerate(readCSV):
+                    row = list(map(float,row[:]))
+                    test_data_list.append(row)
+        else:
+            params.TEST = False
+            print("WARNING: no test file detected. Proceding without test.")
 
 def return_fold_train_valid_sets(train_data_list, ifold):
     if params.FOLDS_NUMBER <= 1:
@@ -138,7 +159,7 @@ def cumulate_loss(fold, epoch, model, loss_fn, train_patterns, validation_patter
         variables.test_sum[epoch] += (loss_train.item())
         variables.test_sum2[epoch] += (loss_train.item())**2
 
-def write_on_file_average_stddev_losses(file_path, write_test=False):
+def write_on_file_average_stddev_losses(file_path):
     outputfile = open(file_path, 'w')
 
     for i in range(params.EPOCHS_NUMBER):
@@ -148,7 +169,7 @@ def write_on_file_average_stddev_losses(file_path, write_test=False):
         val_mean = variables.val_sum[i]/params.FOLDS_NUMBER
         val_dev_std = math.sqrt((variables.val_sum2[i]/params.FOLDS_NUMBER-val_mean*val_mean)/(params.FOLDS_NUMBER-1))
 
-        if write_test == True:
+        if params.TEST == True:
             test_mean = variables.test_sum[i]/params.FOLDS_NUMBER
             test_dev_std = math.sqrt((variables.test_sum2[i]/params.FOLDS_NUMBER-test_mean*test_mean)/(params.FOLDS_NUMBER-1))
 
@@ -157,7 +178,7 @@ def write_on_file_average_stddev_losses(file_path, write_test=False):
         outputfile.write( str(train_dev_std)+" ")
         outputfile.write( str(val_mean)+" ")
 
-        if write_test == True:
+        if params.TEST == True:
             outputfile.write( str(val_dev_std)+" ")
             outputfile.write( str(test_mean)+" ")
             outputfile.write( str(test_dev_std)+"\n")
@@ -191,8 +212,11 @@ def external_cross_val_train(model, loss_fn, optimizer, folds_number, epochs_num
     append_data_in_lists(variables.train_patterns_list, variables.test_patterns_list)
 
     test_patterns = torch.FloatTensor(variables.test_patterns_list)
-    if len(test_patterns) != 0: is_test = True
-
+    if params.TEST == True:
+        if len(test_patterns) != 0:
+            params.TEST = True
+        else:
+            params.TEST = False
     for fold in range(folds_number):
         print("\n### Grouping of folds number %d ###"%(fold+1))
 
