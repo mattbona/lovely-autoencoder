@@ -4,11 +4,13 @@ import csv
 import math
 import matplotlib.pyplot as plt
 
-import torch
-from torch.utils.data import TensorDataset, DataLoader
-
 import src.params as params
 import src.variables as variables
+
+import torch
+from torch.utils.data import TensorDataset, DataLoader
+torch.set_num_threads(2)
+torch.manual_seed(42) # for determinism
 
 def check_dirs():
     if not os.path.exists(params.RESULTS_DIR):
@@ -105,7 +107,11 @@ def return_fold_train_valid_sets(train_data_list, ifold):
     fold_train_patterns = torch.FloatTensor(fold_train_patterns_list)
     fold_val_patterns = torch.FloatTensor(fold_val_patterns_list)
 
-    return fold_train_patterns, fold_val_patterns
+    if params.OPTIMIZER == 'sgd':
+        fold_trainset = TensorDataset(fold_train_patterns, fold_train_patterns)
+        return fold_trainset, fold_val_patterns
+    else:
+        return fold_train_patterns, fold_val_patterns
 
 def cumulate_loss(fold, epoch, model, loss_fn, train_patterns, validation_patterns, test_patterns):
 
@@ -170,7 +176,6 @@ def save_encoding(fold, epoch, model, train_patterns):
 
 def print_encoding_plot():
     for i, encode in enumerate(variables.encoding):
-
         plt.scatter(encode['h1'], encode['h2'], s=0.5)
 
         plt.title("fold: {:3d}, epoch: {:3d}".format((encode['fold']+1),(encode['epoch']+1)))
@@ -180,3 +185,48 @@ def print_encoding_plot():
         plt.ylabel('H2 value')
         plt.savefig(params.ENCODING_DIR+"encoding_plot_fold{:03d}_ep{:03d}.png".format((encode['fold']+1),(encode['epoch']+1)))
         plt.clf()  # Clear the figure for the next loop
+
+def external_cross_val_train(model, loss_fn, optimizer, folds_number, epochs_number, batch_dimension=0):
+    # load training and test (if present) data
+    append_data_in_lists(variables.train_patterns_list, variables.test_patterns_list)
+
+    test_patterns = torch.FloatTensor(variables.test_patterns_list)
+    if len(test_patterns) != 0: is_test = True
+
+    for fold in range(folds_number):
+        print("\n### Grouping of folds number %d ###"%(fold+1))
+
+        if params.OPTIMIZER == 'sgd':
+            trainset, validation_patterns = return_fold_train_valid_sets(variables.train_patterns_list, fold)
+            trainloader = DataLoader(trainset, batch_size = batch_dimension, shuffle=True)
+        else:
+            train_patterns, validation_patterns = return_fold_train_valid_sets(variables.train_patterns_list, fold)
+
+        model.apply(initialize_models_weights)
+        for epoch in range(epochs_number):
+
+            if params.OPTIMIZER == 'sgd':
+                for idata, data in enumerate(trainloader):
+                    inputs, labels = data
+                    optimizer.zero_grad()
+                    y_pred = model(inputs)
+                    loss = loss_fn(y_pred, labels)
+                    loss.backward()
+                    optimizer.step()
+
+                cumulate_loss(fold, epoch, model, loss_fn, trainset[:][0], validation_patterns, test_patterns)
+
+            else:
+                optimizer.zero_grad()
+                predicted_patterns = model(train_patterns)
+                loss = loss_fn(predicted_patterns, train_patterns)
+                loss.backward()
+                optimizer.step()
+
+                cumulate_loss(fold, epoch, model, loss_fn, train_patterns, validation_patterns, test_patterns)
+
+            if params.PRINT_ENCODING == True:
+                if (epoch+1) % params.PRINT_NUMBER == 0:
+                    save_encoding(fold, epoch, train_patterns)
+
+        print('\nTraining completed.')

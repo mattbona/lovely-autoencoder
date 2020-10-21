@@ -7,6 +7,7 @@ CENTRAL_HIDDEN_DIMENSION = 45
 
 # Training parameters
 EPOCHS_NUMBER = 10
+BATCH_DIMENSION = 100
 BIAS = True
 ACTIVATION_FUNCTION = 'LeakyReLU'
 LOSS = 'mse'
@@ -23,6 +24,6 @@ TEST_FILE = 'test'   # Name of the .dat test file in the dataset dir
 # Working dirs
 RESULTS_DIR = './results/'
 
-PRINT_ENCODING = True
+PRINT_ENCODING = False
 PRINT_NUMBER = 10
 ENCODING_DIR = './results/encoding/'

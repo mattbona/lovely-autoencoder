@@ -1,15 +1,3 @@
-import torch
-from torch.utils.data import TensorDataset, DataLoader
-import csv
-import math
-import os
-import sys
-import numpy as np
-import matplotlib.pyplot as plt
-
-torch.set_num_threads(2)
-torch.manual_seed(42) # for determinism
-
 import src. params as params
 import src.variables as variables
 import src.ae_utils as util
@@ -29,41 +17,9 @@ if __name__ == '__main__':
     model.load_state_dict(torch.load(param_file))
     """
 
-    # load training and test (if present) data
-    util.append_data_in_lists(variables.train_patterns_list, variables.test_patterns_list)
-    test_patterns = torch.FloatTensor(variables.test_patterns_list)
-    if len(test_patterns) != 0:
-        is_test = True
-
-    ### CREATION AND GROUPING OF THE DIFFERENT FOLDS ###############################
-    print("\nStart creation, grouping and training of/on the different folds...")
-
-    for fold in range(params.FOLDS_NUMBER):
-        print("\n### Grouping of folds number %d ###" % (fold+1))
-
-        train_patterns, validation_patterns = util.return_fold_train_valid_sets(variables.train_patterns_list, fold)
-
-        model.apply(util.initialize_models_weights)	# weights initialization
-        for epoch in range(params.EPOCHS_NUMBER):  # loop over the dataset multiple times
-
-            # zero the parameter gradients
-            optimizer.zero_grad()
-            # forward + backward + optimize
-            y_pred = model(train_patterns)
-            loss = loss_fn(y_pred, train_patterns)
-            loss.backward()
-            optimizer.step()
-
-            util.cumulate_loss(fold, epoch, model, loss_fn, train_patterns, validation_patterns, test_patterns)
-
-            if params.PRINT_ENCODING == True:
-                if (epoch+1) % params.PRINT_NUMBER == 0:
-                    save_encoding(fold, epoch, model, train_patterns)
-
-        print('\nTraining completed.')
+    util.external_cross_val_train(model, loss_fn, optimizer, params.FOLDS_NUMBER, params.EPOCHS_NUMBER, params.BATCH_DIMENSION)
 
     util.write_on_file_average_stddev_losses(params.RESULTS_DIR+'epoch_loss.dat', write_test=is_test)
-
     if params.PRINT_ENCODING == True:
         print('Printing encoding plots...')
         util.print_encoding_plot()
