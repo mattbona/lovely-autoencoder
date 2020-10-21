@@ -127,6 +127,13 @@ def append_data_in_lists(train_data_list, test_data_list):
             params.TEST = False
             print("WARNING: no test file detected. Proceding without test.")
 
+def get_standardized_tensor(tensor):
+    tensor_means = tensor.mean(dim=1, keepdim=True)
+    tensor_stds = tensor.std(dim=1, keepdim=True)
+    standardized_tensor = (tensor - tensor_means) / tensor_stds
+
+    return standardized_tensor
+
 def return_fold_train_valid_sets(train_data_list, ifold):
     if params.FOLDS_NUMBER <= 1:
         sys.exit("ERROR: you have to select more than 1 fold to have the external cross validation to work!")
@@ -144,6 +151,10 @@ def return_fold_train_valid_sets(train_data_list, ifold):
 
     fold_train_patterns = torch.FloatTensor(fold_train_patterns_list)
     fold_val_patterns = torch.FloatTensor(fold_val_patterns_list)
+
+    if params.STANDARDIZE_DATA == True:
+        fold_train_patterns = get_standardized_tensor(fold_train_patterns)
+        fold_val_patterns = get_standardized_tensor(fold_val_patterns)
 
     if params.OPTIMIZER == 'sgd':
         fold_trainset = TensorDataset(fold_train_patterns, fold_train_patterns)
@@ -232,8 +243,11 @@ def train_model_with_external_cross_val(model, loss_fn, optimizer, folds_number,
     if params.TEST == True:
         if len(test_patterns) != 0:
             params.TEST = True
+            if params.STANDARDIZE_DATA == True:
+                test_patterns = get_standardized_tensor(test_patterns)
         else:
             params.TEST = False
+
     for fold in range(folds_number):
         print("\n### Grouping of folds number %d ###"%(fold+1))
 

@@ -22,6 +22,7 @@ MOMENTUM = 0.5
 WEIGHT_DECAY = 1E-5
 
 DATASET_PATH = './dataset/' # Path to train and test files
+STANDARDIZE_DATA = True
 TRAIN_FILE = 'train' # Name of the .dat train file in the dataset dir
 
 TEST = True
