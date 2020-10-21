@@ -3,6 +3,8 @@ import sys
 import src.params as params
 import torch
 
+import csv
+
 def check_dirs():
     if not os.path.exists(params.RESULTS_DIR):
         try:
@@ -58,3 +60,24 @@ def initialize_models_weights(layer):
     if type(layer) == torch.nn.Linear:
         torch.nn.init.xavier_uniform_(layer.weight)
         layer.bias.data.fill_(0.01)
+
+def append_data_in_lists(train_data_list, test_data_list):
+    train_file_path = params.DATASET_PATH + params.TRAIN_FILE + '.dat'
+    if os.path.isfile(train_file_path) == True:
+        with open(train_file_path) as csvfile:
+            readCSV = csv.reader(csvfile, delimiter=' ')
+            for i,row in enumerate(readCSV):
+                row = list(map(float,row[:]))
+                train_data_list.append(row)
+    else:
+        sys.exit("ERROR: train file not found! Check the path.")
+
+    test_file_path = params.DATASET_PATH + params.TEST_FILE + '.dat'
+    if os.path.isfile(test_file_path) == True:
+        with open(test_file_path) as csvfile:
+            readCSV = csv.reader(csvfile, delimiter=' ')
+            for i,row in enumerate(readCSV):
+                row = list(map(float,row[:]))
+                test_data_list.append(row)
+    else:
+        print("WARNING: no test file detected. Proceding without test.")

@@ -1,6 +1,5 @@
 import torch
 from torch.utils.data import TensorDataset, DataLoader
-from torch.utils.data.dataset import random_split
 import csv
 import math
 import os
@@ -19,10 +18,6 @@ if __name__ == '__main__':
 
     util.check_dirs()
 
-    dataset_path= params.DATASET_PATH
-    test_file= params.TEST_FILE # Name of the .dat test file in the dataset dir
-    train_file= params.TRAIN_FILE # Name of the .dat train file in the dataset dir
-
     model = util.get_hourglass_autoencoder(params.INPUT_DIMENSION,params.CENTRAL_HIDDEN_DIMENSION,params.ACTIVATION_FUNCTION,params.BIAS)
     loss_fn = util.get_loss_function(params.LOSS)
     optimizer = util.get_optimizer(model, params.OPTIMIZER, params.LEARNING_RATE, params.MOMENTUM, params.WEIGHT_DECAY)
@@ -34,31 +29,13 @@ if __name__ == '__main__':
     model.load_state_dict(torch.load(param_file))
     """
 
-    ### LOADING DATA FROM DATABASE #################################################
-    print("\nLoading data for training and testing ...")
-    ## Load data for the first time from a regular file .dat
-    train_patterns_list = variables.train_patterns_list
-    test_patterns_list = variables.test_patterns_list
-    #read and select desired batch
-    with open(dataset_path+train_file+'.dat') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=' ')
-        for i,row in enumerate(readCSV):
-            row=list(map(float,row[:]))
-            train_patterns_list.append(row)
+    # load training and test (if present) data
+    util.append_data_in_lists(variables.train_patterns_list, variables.test_patterns_list)
+    test_patterns = torch.FloatTensor(variables.test_patterns_list)
 
-    with open(dataset_path+test_file+'.dat') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=' ')
-        for i,row in enumerate(readCSV):
-            row=list(map(float,row[:]))
-            test_patterns_list.append(row)
-
-    test_patterns_tensor = torch.FloatTensor(test_patterns_list)
-    testset = TensorDataset(test_patterns_tensor, test_patterns_tensor)
-
+    testset = TensorDataset(test_patterns, test_patterns)
     test_patterns = testset[:][0]
     test_labels = testset[:][1]
-
-    print("Loading of data completed.")
 
     ### CREATION AND GROUPING OF THE DIFFERENT FOLDS ###############################
     print("\nStart creation, grouping and training of/on the different folds...")
@@ -74,10 +51,10 @@ if __name__ == '__main__':
     for fold in range(folds_number):
         print("\n### Grouping of folds number %d ###" % (fold+1))
 
-        fold_train_patterns_list = train_patterns_list.copy()
+        fold_train_patterns_list = variables.train_patterns_list.copy()
 
-        start = int( fold*len(train_patterns_list)/folds_number )
-        end = int( (fold+1)*len(train_patterns_list)/folds_number )
+        start = int( fold*len(variables.train_patterns_list)/folds_number )
+        end = int( (fold+1)*len(variables.train_patterns_list)/folds_number )
         print("Validation-fold start at: %d\t and end at: %d" % (start, end))
 
         val_pattern_list = fold_train_patterns_list[start:end]
