@@ -207,7 +207,7 @@ def print_encoding_plot():
         plt.savefig(params.ENCODING_DIR+"encoding_plot_fold{:03d}_ep{:03d}.png".format((encode['fold']+1),(encode['epoch']+1)))
         plt.clf()  # Clear the figure for the next loop
 
-def external_cross_val_train(model, loss_fn, optimizer, folds_number, epochs_number, batch_dimension=0):
+def train_model_with_external_cross_val(model, loss_fn, optimizer, folds_number, epochs_number, batch_dimension=0):
     # load training and test (if present) data
     append_data_in_lists(variables.train_patterns_list, variables.test_patterns_list)
 

@@ -10,7 +10,7 @@ if __name__ == '__main__':
     loss_fn = util.get_loss_function(params.LOSS)
     optimizer = util.get_optimizer(model, params.OPTIMIZER, params.LEARNING_RATE, params.MOMENTUM, params.WEIGHT_DECAY)
 
-    util.external_cross_val_train(model, loss_fn, optimizer, params.FOLDS_NUMBER, params.EPOCHS_NUMBER, params.BATCH_DIMENSION)
+    util.train_model_with_external_cross_val(model, loss_fn, optimizer, params.FOLDS_NUMBER, params.EPOCHS_NUMBER, params.BATCH_DIMENSION)
 
     util.write_on_file_average_stddev_losses(params.RESULTS_DIR+'epoch_loss.dat')
 
