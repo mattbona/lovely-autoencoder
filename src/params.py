@@ -30,9 +30,9 @@ TEST_FILE = 'test'   # Name of the .dat test file in the dataset dir
 # Working dirs
 RESULTS_DIR = './results/'
 
-PRINT_MODEL_PARAMETERS = False
+PRINT_MODEL_PARAMETERS = True
 PARAMETERS_DIR = './results/network_parameters'
 
-PRINT_ENCODING = False
+PRINT_ENCODING = True
 PRINT_NUMBER = 10
 ENCODING_DIR = './results/encoding/'

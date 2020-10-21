@@ -3,6 +3,7 @@ import sys
 import csv
 import math
 import matplotlib.pyplot as plt
+import numpy as np
 
 import src.params as params
 import src.variables as variables
@@ -44,7 +45,7 @@ def check_dirs():
                 os.mkdir(params.ENCODING_DIR)
             except:
                 sys.exit('ERROR: Cannot create directory for the encoding of the binding sites.')
-                
+
 def get_autoencoder(input_dim=0, hidden_dim=0, activation_func='LeakyReLU', is_bias=False):
     model = torch.nn.Sequential()
 
@@ -130,7 +131,7 @@ def return_fold_train_valid_sets(train_data_list, ifold):
     if params.FOLDS_NUMBER <= 1:
         sys.exit("ERROR: you have to select more than 1 fold to have the external cross validation to work!")
     if len(train_data_list)%params.FOLDS_NUMBER != 0:
-        sys.exit("ERROR: the total number of data is not divisible by the number of folds!")
+        sys.exit("ERROR: the total number of data ("+str(len(train_data_list))+") is not divisible by the number of folds ("+str(params.FOLDS_NUMBER)+")!")
 
     fold_train_patterns_list = train_data_list.copy()
 
@@ -150,19 +151,19 @@ def return_fold_train_valid_sets(train_data_list, ifold):
     else:
         return fold_train_patterns, fold_val_patterns
 
-def cumulate_loss(fold, epoch, model, loss_fn, train_patterns, validation_patterns, test_patterns):
+def cumulate_loss(model, loss_fn, fold, epoch, train_patterns, validation_patterns, test_patterns):
 
     train_prediction = model(train_patterns)
     val_prediction = model(validation_patterns)
-    if len(test_patterns) != 0:
+    if len(test_patterns) != 0 and params.TEST == True:
         test_prediction = model(test_patterns)
 
     loss_train = loss_fn(train_prediction, train_patterns)
     loss_val = loss_fn(val_prediction, validation_patterns)
-    if len(test_patterns) != 0:
+    if len(test_patterns) != 0 and params.TEST == True:
         loss_test = loss_fn(test_prediction, test_patterns)
 
-    if len(test_patterns) != 0:
+    if len(test_patterns) != 0 and params.TEST == True:
         print('[folds-group: %d, epoch: %d]\t train loss: %.3f\t val loss: %.3f\t test loss: %.3f' % (fold+1, epoch+1, loss_train.item(), loss_val.item(), loss_test.item() ))
     else:
         print('[folds-group: %d, epoch: %d]\t train loss: %.3f\t val loss: %.3f' % (fold+1, epoch+1, loss_train.item(), loss_val.item() ))
@@ -171,7 +172,7 @@ def cumulate_loss(fold, epoch, model, loss_fn, train_patterns, validation_patter
     variables.train_sum2[epoch] += (loss_train.item())**2
     variables.val_sum[epoch] += (loss_val.item())
     variables.val_sum2[epoch] += (loss_val.item())**2
-    if len(test_patterns) != 0:
+    if len(test_patterns) != 0 and params.TEST == True:
         variables.test_sum[epoch] += (loss_train.item())
         variables.test_sum2[epoch] += (loss_train.item())**2
 
@@ -203,7 +204,7 @@ def write_on_file_average_stddev_losses(file_path):
 
     outputfile.close()
 
-def save_encoding(fold, epoch, model, train_patterns):
+def save_encoding(model, fold, epoch, train_patterns):
     x = train_patterns
     for module_name, module in model.named_children():
         y = module(x)
@@ -238,6 +239,7 @@ def train_model_with_external_cross_val(model, loss_fn, optimizer, folds_number,
 
         if params.OPTIMIZER == 'sgd':
             trainset, validation_patterns = return_fold_train_valid_sets(variables.train_patterns_list, fold)
+            train_patterns = trainset[:][0]
             trainloader = DataLoader(trainset, batch_size = batch_dimension, shuffle=True)
         else:
             train_patterns, validation_patterns = return_fold_train_valid_sets(variables.train_patterns_list, fold)
@@ -253,9 +255,6 @@ def train_model_with_external_cross_val(model, loss_fn, optimizer, folds_number,
                     loss = loss_fn(y_pred, labels)
                     loss.backward()
                     optimizer.step()
-
-                cumulate_loss(fold, epoch, model, loss_fn, trainset[:][0], validation_patterns, test_patterns)
-
             else:
                 optimizer.zero_grad()
                 predicted_patterns = model(train_patterns)
@@ -263,10 +262,10 @@ def train_model_with_external_cross_val(model, loss_fn, optimizer, folds_number,
                 loss.backward()
                 optimizer.step()
 
-                cumulate_loss(fold, epoch, model, loss_fn, train_patterns, validation_patterns, test_patterns)
+            cumulate_loss(model, loss_fn, fold, epoch, train_patterns, validation_patterns, test_patterns)
 
             if params.PRINT_ENCODING == True:
                 if (epoch+1) % params.PRINT_NUMBER == 0:
-                    save_encoding(fold, epoch, train_patterns)
+                    save_encoding(model, fold, epoch, train_patterns)
 
         print('\nTraining completed.')
