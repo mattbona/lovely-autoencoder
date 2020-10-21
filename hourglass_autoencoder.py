@@ -52,22 +52,7 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-    		# Computing loss
-            val_prediction = model(validation_patterns)
-            train_prediction = model(train_patterns)
-            test_prediction = model(test_patterns)
-
-            loss_train=loss_fn(train_prediction,train_patterns)
-            loss_val=loss_fn(val_prediction,validation_patterns)
-            loss_test = loss_fn(test_prediction,test_patterns)
-            print('[folds-group: %d, epoch: %d]\t train loss: %.4f\t validation loss: %.4f' % (fold+1, epoch + 1, loss_train.item(), loss_val.item()))
-
-            variables.train_sum[epoch] += (loss_train.item())
-            variables.train_sum2[epoch] += (loss_train.item())**2
-            variables.val_sum[epoch] += (loss_val.item())
-            variables.val_sum2[epoch] += (loss_val.item())**2
-            variables.test_sum[epoch] += (loss_train.item())
-            variables.test_sum2[epoch] += (loss_train.item())**2
+            util.cumulate_loss(fold, epoch, model, loss_fn, train_patterns, validation_patterns, test_patterns)
 
             # Print encoding plot
             if epoch % 100 == 0:
@@ -78,7 +63,7 @@ if __name__ == '__main__':
                 hidden_layer2 = model[2](hidden_layer1)
 
                 plt.scatter(hidden_layer2.data[:, 0], hidden_layer2.data[:, 1], s=0.5)
-                plt.title("fold: {:3d}, epoch: {:3d}, loss: {:10.2f}".format(fold, epoch,loss_train.item()))
+                plt.title("fold: {:3d}, epoch: {:3d}".format(fold, epoch))
                 #plt.xlim((0,1))
                 #plt.ylim((0,1))
                 plt.xlabel('H1 value')

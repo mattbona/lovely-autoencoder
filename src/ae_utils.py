@@ -1,10 +1,12 @@
 import os
 import sys
-import src.params as params
+import csv
+
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
-import csv
+import src.params as params
+import src.variables as variables
 
 def check_dirs():
     if not os.path.exists(params.RESULTS_DIR):
@@ -102,3 +104,28 @@ def return_fold_train_valid_sets(train_data_list, ifold):
     fold_val_patterns = torch.FloatTensor(fold_val_patterns_list)
 
     return fold_train_patterns, fold_val_patterns
+
+def cumulate_loss(fold, epoch, model, loss_fn, train_patterns, validation_patterns, test_patterns):
+
+    train_prediction = model(train_patterns)
+    val_prediction = model(validation_patterns)
+    if len(test_patterns) != 0:
+        test_prediction = model(test_patterns)
+
+    loss_train = loss_fn(train_prediction, train_patterns)
+    loss_val = loss_fn(val_prediction, validation_patterns)
+    if len(test_patterns) != 0:
+        loss_test = loss_fn(test_prediction, test_patterns)
+
+    if len(test_patterns) != 0:
+        print('[folds-group: %d, epoch: %d]\t train loss: %.3f\t val loss: %.3f\t test loss: %.3f' % (fold+1, epoch+1, loss_train.item(), loss_val.item(), loss_test.item() ))
+    else:
+        print('[folds-group: %d, epoch: %d]\t train loss: %.3f\t val loss: %.3f' % (fold+1, epoch+1, loss_train.item(), loss_val.item() ))
+
+    variables.train_sum[epoch] += (loss_train.item())
+    variables.train_sum2[epoch] += (loss_train.item())**2
+    variables.val_sum[epoch] += (loss_val.item())
+    variables.val_sum2[epoch] += (loss_val.item())**2
+    if len(test_patterns) != 0:
+        variables.test_sum[epoch] += (loss_train.item())
+        variables.test_sum2[epoch] += (loss_train.item())**2
