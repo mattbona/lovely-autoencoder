@@ -33,61 +33,22 @@ if __name__ == '__main__':
     util.append_data_in_lists(variables.train_patterns_list, variables.test_patterns_list)
     test_patterns = torch.FloatTensor(variables.test_patterns_list)
 
-    testset = TensorDataset(test_patterns, test_patterns)
-    test_patterns = testset[:][0]
-    test_labels = testset[:][1]
-
     ### CREATION AND GROUPING OF THE DIFFERENT FOLDS ###############################
     print("\nStart creation, grouping and training of/on the different folds...")
-    folds_number = params.FOLDS_NUMBER # Number of folds for the external cross validation
-    N_epochs = params.EPOCHS_NUMBER
 
-    train_sum = variables.train_sum
-    val_sum = variables.val_sum
-    test_sum = variables.test_sum
-    train_sum2 = variables.train_sum2
-    val_sum2 = variables.val_sum2
-    test_sum2 = variables.test_sum2
-    for fold in range(folds_number):
+    for fold in range(params.FOLDS_NUMBER):
         print("\n### Grouping of folds number %d ###" % (fold+1))
 
-        fold_train_patterns_list = variables.train_patterns_list.copy()
-
-        start = int( fold*len(variables.train_patterns_list)/folds_number )
-        end = int( (fold+1)*len(variables.train_patterns_list)/folds_number )
-        print("Validation-fold start at: %d\t and end at: %d" % (start, end))
-
-        val_pattern_list = fold_train_patterns_list[start:end]
-
-        del fold_train_patterns_list[start:end]
-
-        train_patterns_tensor = torch.FloatTensor(fold_train_patterns_list)
-        val_pattern_tensor = torch.FloatTensor(val_pattern_list)
-
-        trainset = TensorDataset(train_patterns_tensor, train_patterns_tensor)
-        validationset = TensorDataset(val_pattern_tensor, val_pattern_tensor)
-
-        validation_patterns = validationset[:][0]
-        validation_labels = validationset[:][1]
-
-        train_patterns = trainset[:][0]
-        train_labels = trainset[:][1]
-
-        print("Train size: ", len(trainset))
-        print("Validation size: ", len(validationset))
-        print("Test size: ", len(testset))
-
-    ### TRAINING ON THE SINGLE FOLDS-GROUP #########################################
-        print("\nTraining on the single grouping of folds...")
+        train_patterns, validation_patterns = util.return_fold_train_valid_sets(variables.train_patterns_list, fold)
 
         model.apply(util.initialize_models_weights)	# weights initialization
-        for epoch in range(N_epochs):  # loop over the dataset multiple times
+        for epoch in range(params.EPOCHS_NUMBER):  # loop over the dataset multiple times
 
             # zero the parameter gradients
             optimizer.zero_grad()
             # forward + backward + optimize
             y_pred = model(train_patterns)
-            loss = loss_fn(y_pred, train_labels)
+            loss = loss_fn(y_pred, train_patterns)
             loss.backward()
             optimizer.step()
 
@@ -96,17 +57,17 @@ if __name__ == '__main__':
             train_prediction = model(train_patterns)
             test_prediction = model(test_patterns)
 
-            loss_train=loss_fn(train_prediction,train_labels)
-            loss_val=loss_fn(val_prediction,validation_labels)
-            loss_test = loss_fn(test_prediction,test_labels)
+            loss_train=loss_fn(train_prediction,train_patterns)
+            loss_val=loss_fn(val_prediction,validation_patterns)
+            loss_test = loss_fn(test_prediction,test_patterns)
             print('[folds-group: %d, epoch: %d]\t train loss: %.4f\t validation loss: %.4f' % (fold+1, epoch + 1, loss_train.item(), loss_val.item()))
 
-            train_sum[epoch]+=(loss_train.item())
-            train_sum2[epoch]+=(loss_train.item())**2
-            val_sum[epoch]+=(loss_val.item())
-            val_sum2[epoch]+=(loss_val.item())**2
-            test_sum[epoch]+=(loss_train.item())
-            test_sum2[epoch]+=(loss_train.item())**2
+            variables.train_sum[epoch] += (loss_train.item())
+            variables.train_sum2[epoch] += (loss_train.item())**2
+            variables.val_sum[epoch] += (loss_val.item())
+            variables.val_sum2[epoch] += (loss_val.item())**2
+            variables.test_sum[epoch] += (loss_train.item())
+            variables.test_sum2[epoch] += (loss_train.item())**2
 
             # Print encoding plot
             if epoch % 100 == 0:

@@ -2,6 +2,7 @@ import os
 import sys
 import src.params as params
 import torch
+from torch.utils.data import TensorDataset, DataLoader
 
 import csv
 
@@ -81,3 +82,23 @@ def append_data_in_lists(train_data_list, test_data_list):
                 test_data_list.append(row)
     else:
         print("WARNING: no test file detected. Proceding without test.")
+
+def return_fold_train_valid_sets(train_data_list, ifold):
+    if params.FOLDS_NUMBER <= 1:
+        sys.exit("ERROR: you have to select more than 1 fold to have the external cross validation to work!")
+    if len(train_data_list)%params.FOLDS_NUMBER != 0:
+        sys.exit("ERROR: the total number of data is not divisible by the number of folds!")
+
+    fold_train_patterns_list = train_data_list.copy()
+
+    start = int( ifold*len(train_data_list)/params.FOLDS_NUMBER )
+    end = int( (ifold+1)*len(train_data_list)/params.FOLDS_NUMBER )
+
+    fold_val_patterns_list = fold_train_patterns_list[start:end]
+
+    del fold_train_patterns_list[start:end]
+
+    fold_train_patterns = torch.FloatTensor(fold_train_patterns_list)
+    fold_val_patterns = torch.FloatTensor(fold_val_patterns_list)
+
+    return fold_train_patterns, fold_val_patterns
