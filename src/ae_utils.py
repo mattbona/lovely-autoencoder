@@ -44,6 +44,22 @@ def check_dirs():
                 os.mkdir(params.ENCODING_DIR)
             except:
                 sys.exit('ERROR: Cannot create directory for the encoding of the binding sites.')
+                
+def get_autoencoder(input_dim=0, hidden_dim=0, activation_func='LeakyReLU', is_bias=False):
+    model = torch.nn.Sequential()
+
+    model.add_module('input_linear', torch.nn.Linear(input_dim, hidden_dim, bias=is_bias))
+    if activation_func == 'LeakyReLU':
+        model.add_module('encode', torch.nn.LeakyReLU())
+    if activation_func == 'ReLU':
+        model.add_module('encode', torch.nn.ReLU())
+    model.add_module('hidden_linear', torch.nn.Linear(hidden_dim, input_dim, bias=is_bias))
+    if activation_func == 'LeakyReLU':
+        model.add_module('decode', torch.nn.LeakyReLU())
+    if activation_func == 'ReLU':
+        model.add_module('decode',torch.nn.ReLU())
+
+    return model
 
 def get_hourglass_autoencoder(input_dim, central_hidden_dim, activation_func, is_bias=True):
     first_hidden_dim = int(input_dim*1.1)
