@@ -11,7 +11,7 @@ import src.variables as variables
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
-torch.set_num_threads(params.THREADS_NUMBER)
+if params.SET_THREADS_NUMBER == True: torch.set_num_threads(params.THREADS_NUMBER)
 if params.DETERMINISM ==  True: torch.manual_seed(params.SEED) # for determinism
 
 def load_model_parameters(model, param_file):

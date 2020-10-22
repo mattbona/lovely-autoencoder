@@ -1,3 +1,4 @@
+SET_THREADS_NUMBER = False
 THREADS_NUMBER = 2
 SEED = 42
 DETERMINISM = True
@@ -10,7 +11,7 @@ INPUT_DIMENSION = 45 # Input: superiors triangles of distances matrices of diffe
 CENTRAL_HIDDEN_DIMENSION = 45
 
 # Training parameters
-EPOCHS_NUMBER = 10
+EPOCHS_NUMBER = 10000
 BATCH_DIMENSION = 100
 BIAS = True
 ACTIVATION_FUNCTION = 'LeakyReLU'
@@ -19,7 +20,7 @@ LOSS = 'mse'
 OPTIMIZER = 'sgd'
 LEARNING_RATE = 0.001
 MOMENTUM = 0.5
-WEIGHT_DECAY = 1E-5
+WEIGHT_DECAY = 0.1
 
 DATASET_PATH = './dataset/' # Path to train and test files
 STANDARDIZE_DATA = True
@@ -31,9 +32,9 @@ TEST_FILE = 'test'   # Name of the .dat test file in the dataset dir
 # Working dirs
 RESULTS_DIR = './results/'
 
-PRINT_MODEL_PARAMETERS = True
+PRINT_MODEL_PARAMETERS = False
 PARAMETERS_DIR = './results/network_parameters'
 
-PRINT_ENCODING = True
+PRINT_ENCODING = False
 PRINT_NUMBER = 10
 ENCODING_DIR = './results/encoding/'
