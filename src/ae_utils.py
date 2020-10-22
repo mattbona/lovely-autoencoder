@@ -236,7 +236,17 @@ def print_encoding_plot():
         plt.clf()  # Clear the figure for the next loop
 
 def train_model_with_external_cross_val(model, loss_fn, optimizer, folds_number, epochs_number, batch_dimension=0):
-    # load training and test (if present) data
+
+    dev = "cpu"
+    if params.GPU == True:
+        if torch.cuda.is_available():
+            dev = "cuda:0"
+        else:
+            print("WARNING: no GPUs detected! Utilizing CPU instead.")
+            dev = "cpu"
+    device = torch.device(dev)
+    model.to(device) # sendig model to cpu or gpu
+
     append_data_in_lists(variables.train_patterns_list, variables.test_patterns_list)
 
     test_patterns = torch.FloatTensor(variables.test_patterns_list)
@@ -253,10 +263,13 @@ def train_model_with_external_cross_val(model, loss_fn, optimizer, folds_number,
 
         if params.OPTIMIZER == 'sgd':
             trainset, validation_patterns = return_fold_train_valid_sets(variables.train_patterns_list, fold)
-            train_patterns = trainset[:][0]
             trainloader = DataLoader(trainset, batch_size = batch_dimension, shuffle=True)
+            train_patterns = trainset[:][0].to(device)
+            validation_patterns = validation_patterns.to(device)
         else:
             train_patterns, validation_patterns = return_fold_train_valid_sets(variables.train_patterns_list, fold)
+            train_patterns = train_patterns.to(device)
+            validation_patterns = validation_patterns.to(device)
 
         model.apply(initialize_models_weights)
         for epoch in range(epochs_number):
@@ -264,6 +277,7 @@ def train_model_with_external_cross_val(model, loss_fn, optimizer, folds_number,
             if params.OPTIMIZER == 'sgd':
                 for idata, data in enumerate(trainloader):
                     inputs, labels = data
+                    inputs, labels = inputs.to(device), labels.to(device) 
                     optimizer.zero_grad()
                     y_pred = model(inputs)
                     loss = loss_fn(y_pred, labels)

@@ -1,7 +1,8 @@
-SET_THREADS_NUMBER = False
+GPU = True
+SET_THREADS_NUMBER = True
 THREADS_NUMBER = 2
-SEED = 42
 DETERMINISM = True
+SEED = 42
 
 # External cross-validation parameters
 FOLDS_NUMBER = 13
@@ -11,7 +12,7 @@ INPUT_DIMENSION = 45 # Input: superiors triangles of distances matrices of diffe
 CENTRAL_HIDDEN_DIMENSION = 45
 
 # Training parameters
-EPOCHS_NUMBER = 10000
+EPOCHS_NUMBER = 10
 BATCH_DIMENSION = 100
 BIAS = True
 ACTIVATION_FUNCTION = 'LeakyReLU'
