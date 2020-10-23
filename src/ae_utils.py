@@ -4,6 +4,7 @@ import csv
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 
 import src.params as params
 import src.variables as variables
@@ -12,7 +13,9 @@ import torch
 from torch.utils.data import TensorDataset, DataLoader
 
 if params.SET_THREADS_NUMBER == True: torch.set_num_threads(params.THREADS_NUMBER)
-if params.DETERMINISM ==  True: torch.manual_seed(params.SEED) # for determinism
+if params.DETERMINISM ==  True: 
+    torch.manual_seed(params.SEED) # for determinism
+    random.seed(params.SEED)
 
 def load_model_parameters(model, param_file):
     model.load_state_dict(torch.load(param_file))
@@ -130,7 +133,8 @@ def append_data_in_lists(train_data_list, test_data_list):
                 train_data_list.append(row)
     else:
         sys.exit("ERROR: train file not found! Check the path.")
-
+    random.shuffle(train_data_list) # shuffle train data
+    
     if params.TEST == True:
         test_file_path = params.DATASET_PATH + params.TEST_FILE + '.dat'
         if os.path.isfile(test_file_path) == True:
@@ -145,8 +149,8 @@ def append_data_in_lists(train_data_list, test_data_list):
 
 def get_standardized_tensor(tensor):
     tensor_means = tensor.mean(dim=1, keepdim=True)
-    tensor_stds = tensor.std(dim=1, keepdim=True)
-    standardized_tensor = (tensor - tensor_means) / tensor_stds
+    #tensor_stds = tensor.std(dim=1, keepdim=True)
+    standardized_tensor = (tensor - tensor_means) #/ tensor_stds
 
     return standardized_tensor
 
