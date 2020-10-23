@@ -184,8 +184,8 @@ def cumulate_loss(model, loss_fn, fold, epoch, train_patterns, validation_patter
     variables.val_sum[epoch] += (loss_val.item())
     variables.val_sum2[epoch] += (loss_val.item())**2
     if len(test_patterns) != 0 and params.TEST == True:
-        variables.test_sum[epoch] += (loss_train.item())
-        variables.test_sum2[epoch] += (loss_train.item())**2
+        variables.test_sum[epoch] += (loss_test.item())
+        variables.test_sum2[epoch] += (loss_test.item())**2
 
 def write_on_file_average_stddev_losses(file_path):
     outputfile = open(file_path, 'w')
