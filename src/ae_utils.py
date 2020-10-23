@@ -54,11 +54,16 @@ def get_autoencoder(input_dim=0, hidden_dim=0, activation_func='LeakyReLU', is_b
         model.add_module('encode', torch.nn.LeakyReLU())
     if activation_func == 'ReLU':
         model.add_module('encode', torch.nn.ReLU())
+    if activation_func == 'Sigmoid':
+        model.add_module('encode', torch.nn.Sigmoid())
+
     model.add_module('hidden_linear', torch.nn.Linear(hidden_dim, input_dim, bias=is_bias))
     if activation_func == 'LeakyReLU':
         model.add_module('decode', torch.nn.LeakyReLU())
     if activation_func == 'ReLU':
         model.add_module('decode',torch.nn.ReLU())
+    if activation_func == 'Sigmoid':
+        model.add_module('decode', torch.nn.Sigmoid())
 
     return model
 
@@ -71,21 +76,32 @@ def get_hourglass_autoencoder(input_dim, central_hidden_dim, activation_func, is
         model.add_module('leakyrelu', torch.nn.LeakyReLU())
     if activation_func == 'ReLU':
         model.add_module('relu', torch.nn.ReLU())
+    if activation_func == 'Sigmoid':
+        model.add_module('sigmoid', torch.nn.Sigmoid())
+
     model.add_module('hidden_linear1', torch.nn.Linear(first_hidden_dim, central_hidden_dim, bias=is_bias))
     if activation_func == 'LeakyReLU':
         model.add_module('encode', torch.nn.LeakyReLU())
     if activation_func == 'ReLU':
         model.add_module('encode', torch.nn.ReLU())
+    if activation_func == 'Sigmoid':
+        model.add_module('encode', torch.nn.Sigmoid())
+
     model.add_module('hidden_linear2', torch.nn.Linear(central_hidden_dim, first_hidden_dim, bias=is_bias))
     if activation_func == 'LeakyReLU':
         model.add_module('decode', torch.nn.LeakyReLU())
     if activation_func == 'ReLU':
         model.add_module('decode', torch.nn.ReLU())
+    if activation_func == 'Sigmoid':
+        model.add_module('decode', torch.nn.Sigmoid())
+
     model.add_module('last_hidden_linear', torch.nn.Linear(first_hidden_dim, input_dim, bias=is_bias))
     if activation_func == 'LeakyReLU':
         model.add_module('leakyrelu', torch.nn.LeakyReLU())
     if activation_func == 'ReLU':
         model.add_module('relu', torch.nn.ReLU())
+    if activation_func == 'Sigmoid':
+        model.add_module('sigmoid', torch.nn.Sigmoid())
 
     return model
 
@@ -279,7 +295,7 @@ def train_model_with_external_cross_val(model, loss_fn, optimizer, folds_number,
             if params.OPTIMIZER == 'sgd':
                 for idata, data in enumerate(trainloader):
                     inputs, labels = data
-                    inputs, labels = inputs.to(device), labels.to(device) 
+                    inputs, labels = inputs.to(device), labels.to(device)
                     optimizer.zero_grad()
                     y_pred = model(inputs)
                     loss = loss_fn(y_pred, labels)
