@@ -240,9 +240,10 @@ def train_model_with_external_cross_val(model, loss_fn, optimizer, folds_number,
     dev = "cpu"
     if params.GPU == True:
         if torch.cuda.is_available():
+            print("Using GPU to enhance computation...")
             dev = "cuda:0"
         else:
-            print("WARNING: no GPUs detected! Utilizing CPU instead.")
+            print("WARNING: no GPU detected! Utilizing CPU instead.")
             dev = "cpu"
     device = torch.device(dev)
     model.to(device) # sendig model to cpu or gpu
@@ -250,6 +251,7 @@ def train_model_with_external_cross_val(model, loss_fn, optimizer, folds_number,
     append_data_in_lists(variables.train_patterns_list, variables.test_patterns_list)
 
     test_patterns = torch.FloatTensor(variables.test_patterns_list)
+    test_patterns = test_patterns.to(device)
     if params.TEST == True:
         if len(test_patterns) != 0:
             params.TEST = True
