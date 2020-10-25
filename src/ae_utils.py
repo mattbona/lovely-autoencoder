@@ -4,26 +4,17 @@ import csv
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 
 import src.params as params
-import src.variables as variables
 
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
 if params.SET_THREADS_NUMBER == True: torch.set_num_threads(params.THREADS_NUMBER)
-if params.DETERMINISM ==  True: torch.manual_seed(params.SEED) # for determinism
-
-def load_model_parameters(model, param_file):
-    model.load_state_dict(torch.load(param_file))
-
-def save_model_parameters(model, param_file):
-    torch.save(model.state_dict(), param_file)
-
-def print_model_parameters(model):
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            np.savetxt(params.PARAMETERS_DIR+"/module_"+name+"_parameters.txt", param.data, delimiter='\n ')
+if params.DETERMINISM ==  True:
+    torch.manual_seed(params.SEED) # for determinism
+    random.seed(params.SEED)
 
 def check_dirs():
     if not os.path.exists(params.RESULTS_DIR):
@@ -45,202 +36,46 @@ def check_dirs():
                 os.mkdir(params.ENCODING_DIR)
             except:
                 sys.exit('ERROR: Cannot create directory for the encoding of the binding sites.')
-
-def get_autoencoder(input_dim=0, hidden_dim=0, activation_func='LeakyReLU', is_bias=False):
-    model = torch.nn.Sequential()
-
-    model.add_module('input_linear', torch.nn.Linear(input_dim, hidden_dim, bias=is_bias))
-    if activation_func == 'LeakyReLU':
-        model.add_module('encode', torch.nn.LeakyReLU())
-    if activation_func == 'ReLU':
-        model.add_module('encode', torch.nn.ReLU())
-    if activation_func == 'Sigmoid':
-        model.add_module('encode', torch.nn.Sigmoid())
-
-    model.add_module('hidden_linear', torch.nn.Linear(hidden_dim, input_dim, bias=is_bias))
-    if activation_func == 'LeakyReLU':
-        model.add_module('decode', torch.nn.LeakyReLU())
-    if activation_func == 'ReLU':
-        model.add_module('decode',torch.nn.ReLU())
-    if activation_func == 'Sigmoid':
-        model.add_module('decode', torch.nn.Sigmoid())
-
-    return model
-
-def get_hourglass_autoencoder(input_dim, central_hidden_dim, activation_func, is_bias=True):
-    first_hidden_dim = int(input_dim*1.1)
-
-    model = torch.nn.Sequential()
-    model.add_module('input_linear', torch.nn.Linear(input_dim, first_hidden_dim, bias=is_bias))
-    if activation_func == 'LeakyReLU':
-        model.add_module('leakyrelu', torch.nn.LeakyReLU())
-    if activation_func == 'ReLU':
-        model.add_module('relu', torch.nn.ReLU())
-    if activation_func == 'Sigmoid':
-        model.add_module('sigmoid', torch.nn.Sigmoid())
-
-    model.add_module('hidden_linear1', torch.nn.Linear(first_hidden_dim, central_hidden_dim, bias=is_bias))
-    if activation_func == 'LeakyReLU':
-        model.add_module('encode', torch.nn.LeakyReLU())
-    if activation_func == 'ReLU':
-        model.add_module('encode', torch.nn.ReLU())
-    if activation_func == 'Sigmoid':
-        model.add_module('encode', torch.nn.Sigmoid())
-
-    model.add_module('hidden_linear2', torch.nn.Linear(central_hidden_dim, first_hidden_dim, bias=is_bias))
-    if activation_func == 'LeakyReLU':
-        model.add_module('decode', torch.nn.LeakyReLU())
-    if activation_func == 'ReLU':
-        model.add_module('decode', torch.nn.ReLU())
-    if activation_func == 'Sigmoid':
-        model.add_module('decode', torch.nn.Sigmoid())
-
-    model.add_module('last_hidden_linear', torch.nn.Linear(first_hidden_dim, input_dim, bias=is_bias))
-    if activation_func == 'LeakyReLU':
-        model.add_module('leakyrelu', torch.nn.LeakyReLU())
-    if activation_func == 'ReLU':
-        model.add_module('relu', torch.nn.ReLU())
-    if activation_func == 'Sigmoid':
-        model.add_module('sigmoid', torch.nn.Sigmoid())
-
-    return model
-
-def get_loss_function(loss):
-    if loss == 'mse':
-        return torch.nn.MSELoss(reduction='mean')
-
-def get_optimizer(model, opt, learning_rate=0.001, moment=0.5, wd=1E-5):
-    if opt == 'sgd':
-        return torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=moment, weight_decay=wd)
-    if opt == 'adam':
-        return torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=wd)
-
-def initialize_models_weights(layer):
-    if type(layer) == torch.nn.Linear:
-        torch.nn.init.xavier_uniform_(layer.weight)
-        layer.bias.data.fill_(0.01)
-
-def append_data_in_lists(train_data_list, test_data_list):
-    train_file_path = params.DATASET_PATH + params.TRAIN_FILE + '.dat'
-    if os.path.isfile(train_file_path) == True:
-        with open(train_file_path) as csvfile:
-            readCSV = csv.reader(csvfile, delimiter=' ')
-            for i,row in enumerate(readCSV):
-                row = list(map(float,row[:]))
-                train_data_list.append(row)
-    else:
-        sys.exit("ERROR: train file not found! Check the path.")
-
-    if params.TEST == True:
-        test_file_path = params.DATASET_PATH + params.TEST_FILE + '.dat'
-        if os.path.isfile(test_file_path) == True:
-            with open(test_file_path) as csvfile:
-                readCSV = csv.reader(csvfile, delimiter=' ')
-                for i,row in enumerate(readCSV):
-                    row = list(map(float,row[:]))
-                    test_data_list.append(row)
-        else:
-            params.TEST = False
-            print("WARNING: no test file detected. Proceding without test.")
-
 def get_standardized_tensor(tensor):
     tensor_means = tensor.mean(dim=1, keepdim=True)
     tensor_stds = tensor.std(dim=1, keepdim=True)
     standardized_tensor = (tensor - tensor_means) / tensor_stds
 
     return standardized_tensor
+def get_trainset_testset_tensor_from_file(train_file_path, test_file_path, test, standardize_data):
+    train_patterns_list = []
+    test_patterns_list = []
 
-def return_fold_train_valid_sets(train_data_list, ifold):
-    if params.FOLDS_NUMBER <= 1:
-        sys.exit("ERROR: you have to select more than 1 fold to have the external cross validation to work!")
-    if len(train_data_list)%params.FOLDS_NUMBER != 0:
-        sys.exit("ERROR: the total number of data ("+str(len(train_data_list))+") is not divisible by the number of folds ("+str(params.FOLDS_NUMBER)+")!")
-
-    fold_train_patterns_list = train_data_list.copy()
-
-    start = int( ifold*len(train_data_list)/params.FOLDS_NUMBER )
-    end = int( (ifold+1)*len(train_data_list)/params.FOLDS_NUMBER )
-
-    fold_val_patterns_list = fold_train_patterns_list[start:end]
-
-    del fold_train_patterns_list[start:end]
-
-    fold_train_patterns = torch.FloatTensor(fold_train_patterns_list)
-    fold_val_patterns = torch.FloatTensor(fold_val_patterns_list)
-
-    if params.STANDARDIZE_DATA == True:
-        fold_train_patterns = get_standardized_tensor(fold_train_patterns)
-        fold_val_patterns = get_standardized_tensor(fold_val_patterns)
-
-    if params.OPTIMIZER == 'sgd':
-        fold_trainset = TensorDataset(fold_train_patterns, fold_train_patterns)
-        return fold_trainset, fold_val_patterns
+    if os.path.isfile(train_file_path) == True:
+        with open(train_file_path) as csvfile:
+            readCSV = csv.reader(csvfile, delimiter=' ')
+            for i,row in enumerate(readCSV):
+                row = list(map(float,row[:]))
+                train_patterns_list.append(row)
     else:
-        return fold_train_patterns, fold_val_patterns
+        sys.exit("ERROR: train file not found! Check the path.")
 
-def cumulate_loss(model, loss_fn, fold, epoch, train_patterns, validation_patterns, test_patterns):
-
-    train_prediction = model(train_patterns)
-    val_prediction = model(validation_patterns)
-    if len(test_patterns) != 0 and params.TEST == True:
-        test_prediction = model(test_patterns)
-
-    loss_train = loss_fn(train_prediction, train_patterns)
-    loss_val = loss_fn(val_prediction, validation_patterns)
-    if len(test_patterns) != 0 and params.TEST == True:
-        loss_test = loss_fn(test_prediction, test_patterns)
-
-    if len(test_patterns) != 0 and params.TEST == True:
-        print('[folds-group: %d, epoch: %d]\t train loss: %.3f\t val loss: %.3f\t test loss: %.3f' % (fold+1, epoch+1, loss_train.item(), loss_val.item(), loss_test.item() ))
-    else:
-        print('[folds-group: %d, epoch: %d]\t train loss: %.3f\t val loss: %.3f' % (fold+1, epoch+1, loss_train.item(), loss_val.item() ))
-
-    variables.train_sum[epoch] += (loss_train.item())
-    variables.train_sum2[epoch] += (loss_train.item())**2
-    variables.val_sum[epoch] += (loss_val.item())
-    variables.val_sum2[epoch] += (loss_val.item())**2
-    if len(test_patterns) != 0 and params.TEST == True:
-        variables.test_sum[epoch] += (loss_test.item())
-        variables.test_sum2[epoch] += (loss_test.item())**2
-
-def write_on_file_average_stddev_losses(file_path):
-    outputfile = open(file_path, 'w')
-
-    for i in range(params.EPOCHS_NUMBER):
-        train_mean = variables.train_sum[i]/params.FOLDS_NUMBER
-        train_dev_std = math.sqrt((variables.train_sum2[i]/params.FOLDS_NUMBER-train_mean*train_mean)/(params.FOLDS_NUMBER-1))
-
-        val_mean = variables.val_sum[i]/params.FOLDS_NUMBER
-        val_dev_std = math.sqrt((variables.val_sum2[i]/params.FOLDS_NUMBER-val_mean*val_mean)/(params.FOLDS_NUMBER-1))
-
-        if params.TEST == True:
-            test_mean = variables.test_sum[i]/params.FOLDS_NUMBER
-            test_dev_std = math.sqrt((variables.test_sum2[i]/params.FOLDS_NUMBER-test_mean*test_mean)/(params.FOLDS_NUMBER-1))
-
-        outputfile.write( str(i)+" ")
-        outputfile.write( str(train_mean)+" ")
-        outputfile.write( str(train_dev_std)+" ")
-        outputfile.write( str(val_mean)+" ")
-
-        if params.TEST == True:
-            outputfile.write( str(val_dev_std)+" ")
-            outputfile.write( str(test_mean)+" ")
-            outputfile.write( str(test_dev_std)+"\n")
+    if test == True:
+        if os.path.isfile(test_file_path) == True:
+            with open(test_file_path) as csvfile:
+                readCSV = csv.reader(csvfile, delimiter=' ')
+                for i,row in enumerate(readCSV):
+                    row = list(map(float,row[:]))
+                    test_patterns_list.append(row)
         else:
-            outputfile.write( str(val_dev_std)+"\n")
+            sys.exit("ERROR: test file not found! Check the path.")
 
-    outputfile.close()
+    random.shuffle(train_patterns_list) # shuffle train data
+    train_patterns = torch.FloatTensor(train_patterns_list)
+    test_patterns = torch.FloatTensor(test_patterns_list)
 
-def save_encoding(model, fold, epoch, train_patterns):
-    x = train_patterns
-    for module_name, module in model.named_children():
-        y = module(x)
-        x = y
-        if module_name == 'encode':
-            variables.encoding.append({'fold': fold, 'epoch': epoch, 'h1': y.data[:, 0], 'h2': y.data[:, 0]})
+    if standardize_data == True:
+     train_patterns = get_standardized_tensor(train_patterns)
+     test_patterns = get_standardized_tensor(test_patterns)
 
-def print_encoding_plot():
-    for i, encode in enumerate(variables.encoding):
+    return train_patterns, test_patterns
+def print_encoding_plot(encoding):
+    for i, encode in enumerate(encoding):
         plt.scatter(encode['h1'], encode['h2'], s=0.5)
 
         plt.title("fold: {:3d}, epoch: {:3d}".format((encode['fold']+1),(encode['epoch']+1)))
@@ -250,68 +85,223 @@ def print_encoding_plot():
         plt.ylabel('H2 value')
         plt.savefig(params.ENCODING_DIR+"encoding_plot_fold{:03d}_ep{:03d}.png".format((encode['fold']+1),(encode['epoch']+1)))
         plt.clf()  # Clear the figure for the next loop
+def write_on_file_losses_average_stdev(history, file_path, test):
 
-def train_model_with_external_cross_val(model, loss_fn, optimizer, folds_number, epochs_number, batch_dimension=0):
+    train_mean = history['train_loss'].sum(axis=1)/history['train_loss'].shape[1]
+    train_squared_mean = np.square(history['train_loss']).sum(axis=1)/history['train_loss'].shape[1]
+    train_dev_std = np.sqrt((train_squared_mean - np.square(train_mean))/(history['train_loss'].shape[1]-1) )
 
-    dev = "cpu"
-    if params.GPU == True:
-        if torch.cuda.is_available():
-            print("Using GPU to enhance computation...")
-            dev = "cuda:0"
+    val_mean = history['val_loss'].sum(axis=1)/history['val_loss'].shape[1]
+    val_squared_mean = np.square(history['val_loss']).sum(axis=1)/history['val_loss'].shape[1]
+    val_dev_std = np.sqrt((val_squared_mean - np.square(val_mean))/(history['val_loss'].shape[1]-1) )
+
+    if test == True:
+        test_mean = history['test_loss'].sum(axis=1)/history['test_loss'].shape[1]
+        test_squared_mean = np.square(history['test_loss']).sum(axis=1)/history['test_loss'].shape[1]
+        test_dev_std = np.sqrt((test_squared_mean - np.square(test_mean))/(history['test_loss'].shape[1]-1) )
+
+        means_stdevs = np.stack((train_mean, train_dev_std, val_mean, val_dev_std, test_mean, test_dev_std), axis=1)
+    else:
+        means_stdevs = np.stack((train_mean, train_dev_std, val_mean, val_dev_std), axis=1)
+
+    np.savetxt(file_path, means_stdevs)
+
+class Autoencoder:
+
+    def __init__(self, input_dim, central_hidden_dim=2, number_hidden_layers=0):
+
+        self.model = torch.nn.Sequential()
+        self.input_dim = input_dim
+        self.central_hidden_dim = central_hidden_dim
+        self.number_hidden_layers = number_hidden_layers
+        self.activation_func = ''
+        self.bias = 0
+        self.loss = ''
+        self.optimizer = ''
+        self.learning_rate = 0
+        self.momentum = 0
+        self.weight_decay = 0
+        self.losses_history = {}
+        self.encoding_history = []
+        self.device = torch.device('cpu')
+
+    def summary(self):
+        print("Model:")
+        print(self.model)
+
+    def load_model_parameters(self, param_file):
+        self.model.load_state_dict(torch.load(param_file))
+
+    def save_model_parameters(self, param_file):
+        torch.save(self.model.state_dict(), param_file)
+
+    def print_model_parameters(self, file_dir):
+        for name, param in self.model.named_parameters():
+            if param.requires_grad:
+                np.savetxt(file_dir+"/module_"+name+"_parameters.txt", param.data, delimiter='\n ')
+
+    def compile(self, loss='mse', opt='sgd', activation_func='LeakyReLU',
+                learning_rate=0.001, momentum=0.5, weight_decay=1E-5, bias=True):
+
+        self.activation_func = activation_func
+        self.bias = bias
+
+        if self.number_hidden_layers ==0:
+            self.model.add_module('input_linear', torch.nn.Linear(self.input_dim, self.central_hidden_dim, bias=self.bias))
+            if self.activation_func == 'LeakyReLU':
+                self.model.add_module('encode', torch.nn.LeakyReLU())
+            if self.activation_func == 'ReLU':
+                self.model.add_module('encode', torch.nn.ReLU())
+            if self.activation_func == 'Sigmoid':
+                self.model.add_module('encode', torch.nn.Sigmoid())
+            self.model.add_module('hidden_linear', torch.nn.Linear(self.central_hidden_dim, self.input_dim, bias=self.bias))
+            if self.activation_func == 'LeakyReLU':
+                self.model.add_module('decode', torch.nn.LeakyReLU())
+            if self.activation_func == 'ReLU':
+                self.model.add_module('decode',torch.nn.ReLU())
+            if self.activation_func == 'Sigmoid':
+                self.model.add_module('decode', torch.nn.Sigmoid())
+
+        self.learning_rate = learning_rate
+        self.momentum = momentum
+        self.weight_decay = weight_decay
+
+        if loss == 'mse':
+            self.loss = torch.nn.MSELoss(reduction='mean')
+        if opt == 'sgd':
+            self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate,
+                                             momentum=self.momentum, weight_decay=self.weight_decay)
+        if opt == 'adam':
+            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+
+    def get_train_valid_sets(self, train_tensor, folds_number, ifold):
+        if folds_number <= 1:
+            sys.exit("ERROR: you have to select more than 1 fold to have the external cross validation to work!")
+        if train_tensor.shape[0]%folds_number != 0:
+            sys.exit("ERROR: the total number of data ("+str(train_tensor.shape[0])+") is not divisible by the number of folds ("+str(folds_number)+")!")
+
+        fold_train_patterns = train_tensor.clone().detach()
+
+        start = int( ifold*train_tensor.shape[0]/folds_number )
+        end = int( (ifold+1)*train_tensor.shape[0]/folds_number )
+
+        fold_val_patterns = fold_train_patterns[start:end].clone().detach()
+        fold_train_patterns = torch.cat([fold_train_patterns[:start],fold_train_patterns[end:]])
+
+        if self.optimizer == 'sgd':
+            fold_trainset = TensorDataset(fold_train_patterns, fold_train_patterns)
+            return fold_trainset, fold_val_patterns
         else:
-            print("WARNING: no GPU detected! Utilizing CPU instead.")
-            dev = "cpu"
-    device = torch.device(dev)
-    model.to(device) # sendig model to cpu or gpu
+            return fold_train_patterns, fold_val_patterns
 
-    append_data_in_lists(variables.train_patterns_list, variables.test_patterns_list)
-
-    test_patterns = torch.FloatTensor(variables.test_patterns_list)
-    test_patterns = test_patterns.to(device)
-    if params.TEST == True:
-        if len(test_patterns) != 0:
-            params.TEST = True
-            if params.STANDARDIZE_DATA == True:
-                test_patterns = get_standardized_tensor(test_patterns)
+    def initialize_losses_history(self, folds_number, epochs_number, test):
+        if test == True:
+            self.losses_history = {'train_loss': np.zeros((epochs_number,folds_number)),
+                            'val_loss': np.zeros((epochs_number,folds_number)),
+                            'test_loss': np.zeros((epochs_number,folds_number))}
         else:
-            params.TEST = False
+            self.losses_history = {'train_loss': np.zeros((epochs_number,folds_number)),
+                            'val_loss': np.zeros((epochs_number,folds_number))}
 
-    for fold in range(folds_number):
-        print("\n### Grouping of folds number %d ###"%(fold+1))
-
-        if params.OPTIMIZER == 'sgd':
-            trainset, validation_patterns = return_fold_train_valid_sets(variables.train_patterns_list, fold)
-            trainloader = DataLoader(trainset, batch_size = batch_dimension, shuffle=True)
-            train_patterns = trainset[:][0].to(device)
-            validation_patterns = validation_patterns.to(device)
+    def get_losses_value(self, train_patterns, validation_patterns, test_patterns=torch.tensor([])):
+        if test_patterns.shape[0] > 0:
+            loss_train = self.loss(self.model(train_patterns), train_patterns).item()
+            loss_val = self.loss(self.model(validation_patterns), validation_patterns).item()
+            loss_test = self.loss(self.model(test_patterns), test_patterns).item()
+            return loss_train, loss_val, loss_test
         else:
-            train_patterns, validation_patterns = return_fold_train_valid_sets(variables.train_patterns_list, fold)
-            train_patterns = train_patterns.to(device)
-            validation_patterns = validation_patterns.to(device)
+            loss_train = self.loss(self.model(train_patterns), train_patterns).item()
+            loss_val = self.loss(self.model(validation_patterns), validation_patterns).item()
+            return loss_train, loss_val
 
-        model.apply(initialize_models_weights)
-        for epoch in range(epochs_number):
+    def update_losses_history(self, fold, epoch, loss_train, loss_val, loss_test=np.nan):
+        if loss_test != np.nan:
+            self.losses_history['train_loss'][epoch][fold] = loss_train
+            self.losses_history['val_loss'][epoch][fold] = loss_val
+            self.losses_history['test_loss'][epoch][fold] = loss_test
+        else:
+            self.losses_history['train_loss'][epoch][fold] = loss_train
+            self.losses_history['val_loss'][epoch][fold] = loss_val
 
-            if params.OPTIMIZER == 'sgd':
-                for idata, data in enumerate(trainloader):
-                    inputs, labels = data
-                    inputs, labels = inputs.to(device), labels.to(device)
-                    optimizer.zero_grad()
-                    y_pred = model(inputs)
-                    loss = loss_fn(y_pred, labels)
-                    loss.backward()
-                    optimizer.step()
+    def update_encoding_history(self, fold, epoch, train_patterns):
+        x = train_patterns
+        for module_name, module in self.model.named_children():
+            y = module(x)
+            x = y
+            if module_name == 'encode':
+                self.encoding_history.append({'fold': fold, 'epoch': epoch, 'h1': y.data[:, 0], 'h2': y.data[:, 0]})
+
+    def initialize_models_weights(self, layer):
+        if type(layer) == torch.nn.Linear:
+            torch.nn.init.xavier_uniform_(layer.weight)
+            layer.bias.data.fill_(0.01)
+
+    def train_with_external_crossvalidation(self, x_train, folds_number,
+                                            epochs_number, x_test=torch.tensor([]), batch_dim=128, encoding=False, gpu=False, nprint=100):
+        if gpu == True:
+            if torch.cuda.is_available():
+                print("Using GPU to enhance computation...")
+                self.device = torch.device('cuda:0')
             else:
-                optimizer.zero_grad()
-                predicted_patterns = model(train_patterns)
-                loss = loss_fn(predicted_patterns, train_patterns)
-                loss.backward()
-                optimizer.step()
+                print("WARNING: no GPU detected! Utilizing CPU instead.")
+        self.model.to(self.device) # sendig model to cpu or gpu
 
-            cumulate_loss(model, loss_fn, fold, epoch, train_patterns, validation_patterns, test_patterns)
+        if x_test.shape[0] > 0:
+            test = True
+        else:
+            test = False
 
-            if params.PRINT_ENCODING == True:
-                if (epoch+1) % params.PRINT_NUMBER == 0:
-                    save_encoding(model, fold, epoch, train_patterns)
+        self.initialize_losses_history(folds_number, epochs_number, test)
+        for fold in range(folds_number):
+            print("\n### Grouping of folds number %d ###"%(fold+1))
+
+            if self.optimizer == 'sgd':
+                trainset, validation_patterns = self.get_train_valid_sets(x_train, folds_number, fold)
+                trainloader = DataLoader(trainset, batch_size = batch_dimension, shuffle=True)
+                train_patterns, validation_patterns = trainset[:][0].to(self.device), validation_patterns.to(self.device)
+            else:
+                train_patterns, validation_patterns = self.get_train_valid_sets(x_train, folds_number, fold)
+                train_patterns, validation_patterns = train_patterns.to(self.device), validation_patterns.to(self.device)
+
+            self.model.apply(self.initialize_models_weights)
+            for epoch in range(epochs_number):
+
+                if self.optimizer == 'sgd':
+                    for idata, data in enumerate(trainloader):
+                        inputs, labels = data
+                        inputs, labels = inputs.to(self.device), labels.to(self.device)
+                        self.optimizer.zero_grad()
+                        y_pred = self.model(inputs)
+                        loss = self.loss(y_pred, labels)
+                        loss.backward()
+                        self.optimizer.step()
+                else:
+                    self.optimizer.zero_grad()
+                    predicted_patterns = self.model(train_patterns)
+                    loss = self.loss(predicted_patterns, train_patterns)
+                    loss.backward()
+                    self.optimizer.step()
+
+                if test == True:
+                    train_loss, val_loss, test_loss = self.get_losses_value(train_patterns, validation_patterns, x_test)
+                    self.update_losses_history(fold, epoch, train_loss, val_loss, test_loss)
+                    if epoch % nprint == (nprint-1):
+                        print('[folds-group: %d, epoch: %d]\t train loss: %.3f\t val loss: %.3f\t test loss: %.3f' %
+                              (fold+1, epoch+1, train_loss, val_loss, test_loss))
+                else:
+                    train_loss, val_loss = self.get_losses_value(train_patterns, validation_patterns)
+                    self.update_losses_history(fold, epoch, train_loss, val_loss)
+                    if epoch % nprint == (nprint-1):
+                        print('[folds-group: %d, epoch: %d]\t train loss: %.3f\t val loss: %.3f' %
+                              (fold+1, epoch+1, train_loss, val_loss))
+
+                if encoding == True:
+                    if epoch % nprint == (nprint-1):
+                        self.update_encoding_history(fold, epoch, train_patterns)
 
         print('\nTraining completed.')
+
+        if encoding == True:
+            return self.losses_history, self.encoding_history
+        else:
+            return self.losses_history

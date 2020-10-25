@@ -1,15 +1,15 @@
-GPU = True
+GPU = False
 SET_THREADS_NUMBER = True
 THREADS_NUMBER = 2
 DETERMINISM = True
 SEED = 42
-
+PRINT_NUMBER = 2
 # External cross-validation parameters
 FOLDS_NUMBER = 13
 
 # Model definition
-INPUT_DIMENSION = 45 # Input: superiors triangles of distances matrices of different binding sites
 CENTRAL_HIDDEN_DIMENSION = 45
+NUMBER_HIDDEN_LAYERS = 0 # Number of hidden layers between input and central hidden
 
 # Training parameters
 EPOCHS_NUMBER = 10
@@ -37,5 +37,4 @@ PRINT_MODEL_PARAMETERS = False
 PARAMETERS_DIR = './results/network_parameters'
 
 PRINT_ENCODING = False
-PRINT_NUMBER = 10
 ENCODING_DIR = './results/encoding/'
