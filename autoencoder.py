@@ -10,7 +10,7 @@ def run(central_hidden_dim, number_hidden_layers, activation_func, bias, loss, o
     train_file_path = params.DATASET_PATH+params.TRAIN_FILE+'.dat'
     test_file_path = params.DATASET_PATH+params.TEST_FILE+'.dat'
     x_train, x_test = util.get_data_tensor_from_file(train_file_path, test_file_path,
-                                                     standardize_data)
+                                                     standardize_data=standardize_data)
 
     ae_net = util.Autoencoder(x_train.shape[1], central_hidden_dim, number_hidden_layers) #definisco la geometria
     ae_net.compile(loss, opt, activation_func, learning_rate, momentum, weight_decay, bias) #setto ottimizzatore, loss e costruisco rete

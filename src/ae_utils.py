@@ -54,7 +54,12 @@ def get_data_tensor_from_file(train_file_path, test_file_path='', standardize_da
                 train_patterns_list.append(row)
     else:
         sys.exit("ERROR: train file not found! Check the path.")
-    
+
+    random.shuffle(train_patterns_list) # shuffle train data
+    train_patterns = torch.FloatTensor(train_patterns_list)
+    if standardize_data == True:
+        train_patterns = get_standardized_tensor(train_patterns)
+
     if test_file_path:
         if os.path.isfile(test_file_path) == True:
             with open(test_file_path) as csvfile:
@@ -65,18 +70,14 @@ def get_data_tensor_from_file(train_file_path, test_file_path='', standardize_da
         else:
             sys.exit("ERROR: test file not found! Check the path.")
 
-    random.shuffle(train_patterns_list) # shuffle train data
-    train_patterns = torch.FloatTensor(train_patterns_list)
-    test_patterns = torch.FloatTensor(test_patterns_list)
+        test_patterns = torch.FloatTensor(test_patterns_list)
 
-    if standardize_data == True:
-     train_patterns = get_standardized_tensor(train_patterns)
-     test_patterns = get_standardized_tensor(test_patterns)
+        if standardize_data == True:
+            test_patterns = get_standardized_tensor(test_patterns)
 
-    if test_file_path:
         return train_patterns, test_patterns
-    else:
-        return train_patterns
+
+    return train_patterns
 
 def print_encoding_plot(encoding, encoding_dir):
     for i, encode in enumerate(encoding):
