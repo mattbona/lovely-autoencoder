@@ -78,7 +78,6 @@ def get_data_tensor_from_file(train_file_path, test_file_path='', standardize_da
         return train_patterns, test_patterns
 
     return train_patterns
-
 def print_encoding_plot(encoding, encoding_dir):
     for i, encode in enumerate(encoding):
         plt.scatter(encode['h1'], encode['h2'], s=0.5)
@@ -133,18 +132,14 @@ class Autoencoder:
     def summary(self):
         print("Model:")
         print(self.model)
-
     def load_model_parameters(self, param_file):
         self.model.load_state_dict(torch.load(param_file))
-
     def save_model_parameters(self, param_file):
         torch.save(self.model.state_dict(), param_file)
-
     def print_model_parameters(self, file_dir):
         for name, param in self.model.named_parameters():
             if param.requires_grad:
                 np.savetxt(file_dir+"/module_"+name+"_parameters.txt", param.data, delimiter='\n ')
-
     def compile(self, loss='mse', opt='sgd', activation_func='LeakyReLU',
                 learning_rate=0.001, momentum=0.5, weight_decay=1E-5, bias=True):
 
@@ -177,8 +172,8 @@ class Autoencoder:
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate,
                                              momentum=self.momentum, weight_decay=self.weight_decay)
         if opt == 'adam':
-            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
-
+            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate,
+                                              weight_decay=self.weight_decay)
     def get_train_valid_sets(self, train_tensor, folds_number, ifold):
         if folds_number <= 1:
             sys.exit("ERROR: you have to select more than 1 fold to have the external cross validation to work!")
@@ -198,16 +193,14 @@ class Autoencoder:
             return fold_trainset, fold_val_patterns
         else:
             return fold_train_patterns, fold_val_patterns
-
-    def initialize_losses_history(self, folds_number, epochs_number, test):
+    def initialize_losses_history(self, folds_number, epochs_number, test=False):
         if test == True:
             self.losses_history = {'train_loss': np.zeros((epochs_number,folds_number)),
                             'val_loss': np.zeros((epochs_number,folds_number)),
                             'test_loss': np.zeros((epochs_number,folds_number))}
         else:
             self.losses_history = {'train_loss': np.zeros((epochs_number,folds_number)),
-                            'val_loss': np.zeros((epochs_number,folds_number))}
-
+                                   'val_loss': np.zeros((epochs_number,folds_number))}
     def get_losses_value(self, train_patterns, validation_patterns, test_patterns=torch.tensor([])):
         if test_patterns.shape[0] > 0:
             loss_train = self.loss(self.model(train_patterns), train_patterns).item()
@@ -218,16 +211,14 @@ class Autoencoder:
             loss_train = self.loss(self.model(train_patterns), train_patterns).item()
             loss_val = self.loss(self.model(validation_patterns), validation_patterns).item()
             return loss_train, loss_val
-
     def update_losses_history(self, fold, epoch, loss_train, loss_val, loss_test=np.nan):
-        if loss_test != np.nan:
+        if np.isnan(loss_test):
             self.losses_history['train_loss'][epoch][fold] = loss_train
             self.losses_history['val_loss'][epoch][fold] = loss_val
-            self.losses_history['test_loss'][epoch][fold] = loss_test
         else:
             self.losses_history['train_loss'][epoch][fold] = loss_train
             self.losses_history['val_loss'][epoch][fold] = loss_val
-
+            self.losses_history['test_loss'][epoch][fold] = loss_test
     def update_encoding_history(self, fold, epoch, train_patterns):
         x = train_patterns
         for module_name, module in self.model.named_children():
@@ -235,14 +226,12 @@ class Autoencoder:
             x = y
             if module_name == 'encode':
                 self.encoding_history.append({'fold': fold, 'epoch': epoch, 'h1': y.data[:, 0], 'h2': y.data[:, 0]})
-
     def initialize_models_weights(self, layer):
         if type(layer) == torch.nn.Linear:
             torch.nn.init.xavier_uniform_(layer.weight)
             layer.bias.data.fill_(0.01)
-
     def train_with_external_crossvalidation(self, x_train, folds_number,
-                                            epochs_number, x_test=torch.tensor([]), batch_dim=128, encoding=False, gpu=False, nprint=100):
+                                            epochs_number, testset=torch.tensor([]), batch_dim=128, encoding=False, gpu=False, nprint=100):
         if gpu == True:
             if torch.cuda.is_available():
                 print("Using GPU to enhance computation...")
@@ -251,12 +240,12 @@ class Autoencoder:
                 print("WARNING: no GPU detected! Utilizing CPU instead.")
         self.model.to(self.device) # sendig model to cpu or gpu
 
-        if x_test.shape[0] > 0:
+        if testset.shape[0] > 0:
             test = True
         else:
             test = False
 
-        self.initialize_losses_history(folds_number, epochs_number, test)
+        self.initialize_losses_history(folds_number, epochs_number, test=test)
         for fold in range(folds_number):
             print("\n### Grouping of folds number %d ###"%(fold+1))
 
@@ -288,7 +277,7 @@ class Autoencoder:
                     self.optimizer.step()
 
                 if test == True:
-                    train_loss, val_loss, test_loss = self.get_losses_value(train_patterns, validation_patterns, x_test)
+                    train_loss, val_loss, test_loss = self.get_losses_value(train_patterns, validation_patterns, testset)
                     self.update_losses_history(fold, epoch, train_loss, val_loss, test_loss)
                     if epoch % nprint == (nprint-1):
                         print('[folds-group: %d, epoch: %d]\t train loss: %.3f\t val loss: %.3f\t test loss: %.3f' %
