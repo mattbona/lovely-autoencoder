@@ -42,7 +42,7 @@ def get_standardized_tensor(tensor):
     standardized_tensor = (tensor - tensor_means) / tensor_stds
 
     return standardized_tensor
-def get_trainset_testset_tensor_from_file(train_file_path, test_file_path, test, standardize_data):
+def get_data_tensor_from_file(train_file_path, test_file_path='', standardize_data=False):
     train_patterns_list = []
     test_patterns_list = []
 
@@ -54,8 +54,8 @@ def get_trainset_testset_tensor_from_file(train_file_path, test_file_path, test,
                 train_patterns_list.append(row)
     else:
         sys.exit("ERROR: train file not found! Check the path.")
-
-    if test == True:
+    
+    if test_file_path:
         if os.path.isfile(test_file_path) == True:
             with open(test_file_path) as csvfile:
                 readCSV = csv.reader(csvfile, delimiter=' ')
@@ -73,8 +73,12 @@ def get_trainset_testset_tensor_from_file(train_file_path, test_file_path, test,
      train_patterns = get_standardized_tensor(train_patterns)
      test_patterns = get_standardized_tensor(test_patterns)
 
-    return train_patterns, test_patterns
-def print_encoding_plot(encoding):
+    if test_file_path:
+        return train_patterns, test_patterns
+    else:
+        return train_patterns
+
+def print_encoding_plot(encoding, encoding_dir):
     for i, encode in enumerate(encoding):
         plt.scatter(encode['h1'], encode['h2'], s=0.5)
 
@@ -83,7 +87,7 @@ def print_encoding_plot(encoding):
         #plt.ylim((0,1))
         plt.xlabel('H1 value')
         plt.ylabel('H2 value')
-        plt.savefig(params.ENCODING_DIR+"encoding_plot_fold{:03d}_ep{:03d}.png".format((encode['fold']+1),(encode['epoch']+1)))
+        plt.savefig(encoding_dir+"encoding_plot_fold{:03d}_ep{:03d}.png".format((encode['fold']+1),(encode['epoch']+1)))
         plt.clf()  # Clear the figure for the next loop
 def write_on_file_losses_average_stdev(history, file_path, test):
 
