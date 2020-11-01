@@ -3,7 +3,7 @@ import src.ae_utils as util
 
 def run(central_hidden_dim, number_hidden_layers, activation_func, bias, loss, opt,
         learning_rate, momentum, weight_decay, folds_number, epochs_number,
-        batch_dim=128, parameters=False, encoding=False, gpu=False, nprint=100, test=False, standardize_data=False):
+        batch_dim=128, parameters=False, encoding=False, gpu=False, nprint=100, standardize_data=False):
 
     util.check_dirs()
 
@@ -16,10 +16,10 @@ def run(central_hidden_dim, number_hidden_layers, activation_func, bias, loss, o
     ae_net.compile(loss, opt, activation_func, learning_rate, momentum, weight_decay, bias) #setto ottimizzatore, loss e costruisco rete
     ae_net.summary()
     # traino la rete e mi viene restituito un dict con matrici di loss Nepochs*Nfolds con flag che mi restituisce pure l'encoding se voglio
-    losses_history, encoding_history = ae_net.train_with_external_crossvalidation(x_train, folds_number, epochs_number, testset=x_test,  
+    losses_history = ae_net.train_with_external_crossvalidation(x_train, folds_number, epochs_number, testset=x_test,
                                                                                   batch_dim=batch_dim, encoding=encoding, gpu=gpu, nprint=nprint)
 
-    util.write_on_file_losses_average_stdev(losses_history, params.RESULTS_DIR+'epoch_loss.dat', test)
+    util.write_on_file_losses_average_stdev(losses_history, params.RESULTS_DIR+'epoch_loss.dat')
     if encoding == True:
         print('Printing encoding plots...')
         util.print_encoding_plot(encoding_history, params.ENCODING_DIR)
@@ -32,4 +32,4 @@ if __name__ == '__main__':
     run(params.CENTRAL_HIDDEN_DIMENSION, params.NUMBER_HIDDEN_LAYERS, params.ACTIVATION_FUNCTION,
         params.BIAS, params.LOSS, params.OPTIMIZER, params.LEARNING_RATE, params.MOMENTUM, params.WEIGHT_DECAY,
         params.FOLDS_NUMBER, params.EPOCHS_NUMBER, params.BATCH_DIMENSION, params.PRINT_MODEL_PARAMETERS,
-        params.PRINT_ENCODING, params.GPU, params.PRINT_NUMBER, params.TEST, params.STANDARDIZE_DATA)
+        params.PRINT_ENCODING, params.GPU, params.PRINT_NUMBER, params.STANDARDIZE_DATA)

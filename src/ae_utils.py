@@ -89,7 +89,7 @@ def print_encoding_plot(encoding, encoding_dir):
         plt.ylabel('H2 value')
         plt.savefig(encoding_dir+"encoding_plot_fold{:03d}_ep{:03d}.png".format((encode['fold']+1),(encode['epoch']+1)))
         plt.clf()  # Clear the figure for the next loop
-def write_on_file_losses_average_stdev(history, file_path, test):
+def write_on_file_losses_average_stdev(history, file_path):
 
     train_mean = history['train_loss'].sum(axis=1)/history['train_loss'].shape[1]
     train_squared_mean = np.square(history['train_loss']).sum(axis=1)/history['train_loss'].shape[1]
@@ -99,7 +99,7 @@ def write_on_file_losses_average_stdev(history, file_path, test):
     val_squared_mean = np.square(history['val_loss']).sum(axis=1)/history['val_loss'].shape[1]
     val_dev_std = np.sqrt((val_squared_mean - np.square(val_mean))/(history['val_loss'].shape[1]-1) )
 
-    if test == True:
+    if 'test_loss' in history:
         test_mean = history['test_loss'].sum(axis=1)/history['test_loss'].shape[1]
         test_squared_mean = np.square(history['test_loss']).sum(axis=1)/history['test_loss'].shape[1]
         test_dev_std = np.sqrt((test_squared_mean - np.square(test_mean))/(history['test_loss'].shape[1]-1) )
