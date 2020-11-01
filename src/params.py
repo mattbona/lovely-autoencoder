@@ -9,7 +9,7 @@ FOLDS_NUMBER = 13
 
 # Model definition
 CENTRAL_HIDDEN_DIMENSION = 45
-NUMBER_HIDDEN_LAYERS = 0 # Number of hidden layers between input and central hidden
+INTERMEDIATE_HIDDEN_LAYERS = False # Add an intermediate hidden layer between in and central layer + central and out
 
 # Training parameters
 EPOCHS_NUMBER = 10
