@@ -108,7 +108,7 @@ def write_on_file_losses_average_stdev(history, file_path):
     else:
         means_stdevs = np.stack((train_mean, train_dev_std, val_mean, val_dev_std), axis=1)
 
-    np.savetxt(file_path, means_stdevs)
+    np.savetxt(file_path, means_stdevs, fmt='%.3f')
 
 class Autoencoder:
 
