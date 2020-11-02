@@ -272,6 +272,7 @@ class Autoencoder:
 
         if testset.shape[0] > 0:
             test = True
+            testset = testset.to(self.device)
         else:
             test = False
 
