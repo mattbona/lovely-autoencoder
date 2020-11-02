@@ -5,6 +5,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+import time
 
 import src.params as params
 
@@ -277,6 +278,7 @@ class Autoencoder:
             test = False
 
         self.initialize_losses_history(folds_number, epochs_number, test=test)
+        start_time = time.time()
         for fold in range(folds_number):
             print("\n### Grouping of folds number %d ###"%(fold+1))
 
@@ -324,7 +326,12 @@ class Autoencoder:
                     if epoch % nprint == (nprint-1):
                         self.update_encoding_history(fold, epoch, train_patterns)
 
-        print('\nTraining completed.')
+        passed_time_tot_sec = time.time() - start_time
+        passed_time_hour = passed_time_tot_sec/3600
+        passed_time_min = (passed_time_hour - int(passed_time_hour))*60
+        passed_time_sec = (passed_time_min - int(passed_time_min))*60
+        print('\nTraining completed! The traing procedure has taken %dh %dmin %ds'
+              % (int(passed_time_hour), int(passed_time_min), int(passed_time_sec)) )
 
         if encoding == True:
             return self.losses_history, self.encoding_history
