@@ -94,17 +94,29 @@ def write_on_file_losses_average_stdev(history, file_path):
 
     train_mean = history['train_loss'].sum(axis=1)/history['train_loss'].shape[1]
     train_squared_mean = np.square(history['train_loss']).sum(axis=1)/history['train_loss'].shape[1]
-    train_dev_std = np.sqrt((train_squared_mean - np.square(train_mean))/(history['train_loss'].shape[1]-1) )
+    train_var = (train_squared_mean - np.square(train_mean))/(history['train_loss'].shape[1]-1)
+    if train_var.all() > 0:
+        train_dev_std = np.sqrt(train_var)
+    else:
+        train_dev_std = 0
 
     val_mean = history['val_loss'].sum(axis=1)/history['val_loss'].shape[1]
     val_squared_mean = np.square(history['val_loss']).sum(axis=1)/history['val_loss'].shape[1]
-    val_dev_std = np.sqrt((val_squared_mean - np.square(val_mean))/(history['val_loss'].shape[1]-1) )
+    val_var = (val_squared_mean - np.square(val_mean))/(history['val_loss'].shape[1]-1)
+    if val_var.all() > 0:
+        val_dev_std = np.sqrt(val_var)
+    else:
+        val_dev_std = 0
 
     if 'test_loss' in history:
         test_mean = history['test_loss'].sum(axis=1)/history['test_loss'].shape[1]
         test_squared_mean = np.square(history['test_loss']).sum(axis=1)/history['test_loss'].shape[1]
-        test_dev_std = np.sqrt((test_squared_mean - np.square(test_mean))/(history['test_loss'].shape[1]-1) )
-
+        test_var = (test_squared_mean - np.square(test_mean))/(history['test_loss'].shape[1]-1)
+        if test_var.all() > 0:
+            test_dev_std = np.sqrt(test_var)
+        else:
+            test_dev_std = 0
+     
         means_stdevs = np.stack((train_mean, train_dev_std, val_mean, val_dev_std, test_mean, test_dev_std), axis=1)
     else:
         means_stdevs = np.stack((train_mean, train_dev_std, val_mean, val_dev_std), axis=1)
