@@ -55,7 +55,7 @@ def get_data_tensor_from_file(train_file_path, test_file_path='', standardize_da
                 train_patterns_list.append(row)
     else:
         sys.exit("ERROR: train file not found! Check the path.")
-        
+
     random.shuffle(train_patterns_list) # shuffle train data
     train_patterns = torch.FloatTensor(train_patterns_list)
     if standardize_data == True:
@@ -78,6 +78,31 @@ def get_data_tensor_from_file(train_file_path, test_file_path='', standardize_da
         return train_patterns, test_patterns
 
     return train_patterns
+def get_reconstructed_matrix_tensor_from_flattened_triangular(tensor, dim):
+    triu_i = np.triu_indices(dim,1)
+    tril_i = np.tril_indices(dim, -1)
+    matrix = np.zeros((dim,dim))
+
+    reconstruted_matrix_tensor = torch.tensor(()).new_zeros(tensor.shape[0],dim,dim)
+    for ifmatrix, flattened_matrix in enumerate(tensor):
+        matrix[triu_i] = flattened_matrix
+        matrix[tril_i] = matrix[triu_i]
+        reconstruted_matrix_tensor[ifmatrix] = torch.from_numpy(matrix)
+
+    return reconstruted_matrix_tensor
+def get_permuted_matrix_tensor_by_column_sum(tensor):
+    permuted_matrix_tensor = torch.tensor(()).new_zeros(tensor.shape[0],tensor.shape[1],tensor.shape[1])
+    for imatrix, matrix in enumerate(tensor):
+        sumCol = matrix.sum(axis=0)
+        perm = np.argsort(sumCol)
+        permuted_matrix_tensor[imatrix] = matrix[:,perm]
+
+    return permuted_matrix_tensor
+def get_flattened_permuted_matrix_tensor(tensor):
+    tensor = get_permuted_matrix_tensor_by_column_sum(tensor)
+    tensor = torch.flatten(tensor, start_dim=1)
+    return tensor
+
 def print_encoding_plot(encoding, encoding_dir):
     for i, encode in enumerate(encoding):
         plt.scatter(encode['h1'], encode['h2'], s=0.5)
@@ -115,7 +140,7 @@ def write_on_file_losses_average_stdev(history, file_path):
             test_dev_std = np.sqrt(test_var)
         else:
             test_dev_std = 0
-     
+
         means_stdevs = np.stack((train_mean, train_dev_std, val_mean, val_dev_std, test_mean, test_dev_std), axis=1)
     else:
         means_stdevs = np.stack((train_mean, train_dev_std, val_mean, val_dev_std), axis=1)
@@ -243,13 +268,31 @@ class Autoencoder:
         else:
             self.losses_history = {'train_loss': np.zeros((epochs_number,folds_number)),
                                    'val_loss': np.zeros((epochs_number,folds_number))}
-    def get_losses_value(self, train_patterns, validation_patterns, test_patterns=torch.tensor([])):
+    def get_losses_value(self, train_patterns, validation_patterns, test_patterns=torch.tensor([]), fix_permutation=False):
         if test_patterns.shape[0] > 0:
+            if fix_permutation == True:
+                dim = int(np.sqrt(train_patterns.shape[1]))
+                train_patterns = train_patterns.reshape((train_patterns.shape[0],dim,dim))
+                validation_patterns = validation_patterns.reshape((validation_patterns.shape[0],dim,dim))
+                test_patterns = test_patterns.reshape((test_patterns.shape[0],dim,dim))
+
+                train_patterns = get_flattened_permuted_matrix_tensor(train_patterns)
+                validation_patterns = get_flattened_permuted_matrix_tensor(validation_patterns)
+                test_patterns = get_flattened_permuted_matrix_tensor(test_patterns)
+
             loss_train = self.loss(self.model(train_patterns), train_patterns).item()
             loss_val = self.loss(self.model(validation_patterns), validation_patterns).item()
             loss_test = self.loss(self.model(test_patterns), test_patterns).item()
             return loss_train, loss_val, loss_test
         else:
+            if fix_permutation == True:
+                dim = int(np.sqrt(train_patterns.shape[1]))
+                train_patterns = train_patterns.reshape((train_patterns.shape[0],dim,dim))
+                validation_patterns = validation_patterns.reshape((validation_patterns.shape[0],dim,dim))
+
+                train_patterns = get_flattened_permuted_matrix_tensor(train_patterns)
+                validation_patterns = get_flattened_permuted_matrix_tensor(validation_patterns)
+
             loss_train = self.loss(self.model(train_patterns), train_patterns).item()
             loss_val = self.loss(self.model(validation_patterns), validation_patterns).item()
             return loss_train, loss_val
@@ -272,8 +315,8 @@ class Autoencoder:
         if type(layer) == torch.nn.Linear:
             torch.nn.init.xavier_uniform_(layer.weight)
             layer.bias.data.fill_(0.01)
-    def train_with_external_crossvalidation(self, x_train, folds_number,
-                                            epochs_number, testset=torch.tensor([]), batch_dim=128, encoding=False, gpu=False, nprint=100):
+    def train_with_external_crossvalidation(self, x_train, folds_number, epochs_number, testset=torch.tensor([]),
+                                            batch_dim=128, encoding=False, gpu=False, nprint=100, fix_permutation=False):
         if gpu == True:
             if torch.cuda.is_available():
                 print("Using GPU to enhance computation...")
@@ -302,6 +345,7 @@ class Autoencoder:
                 train_patterns, validation_patterns = train_patterns.to(self.device), validation_patterns.to(self.device)
 
             self.model.apply(self.initialize_models_weights)
+            if fix_permutation == True: dim = int(np.sqrt(train_patterns.shape[1]))
             for epoch in range(epochs_number):
 
                 if self.optimizer == 'sgd':
@@ -310,24 +354,30 @@ class Autoencoder:
                         inputs, labels = inputs.to(self.device), labels.to(self.device)
                         self.optimizer.zero_grad()
                         y_pred = self.model(inputs)
+                        if fix_permutation == True:
+                            y_pred = y_pred.reshape((y_pred.shape[0],dim,dim))
+                            y_pred = get_flattened_permuted_matrix_tensor(y_pred)
                         loss = self.loss(y_pred, labels)
                         loss.backward()
                         self.optimizer.step()
                 else:
                     self.optimizer.zero_grad()
                     predicted_patterns = self.model(train_patterns)
+                    if fix_permutation == True:
+                         predicted_patterns = predicted_patterns.reshape((predicted_patterns.shape[0],dim,dim))
+                         predicted_patterns = get_flattened_permuted_matrix_tensor(predicted_patterns)
                     loss = self.loss(predicted_patterns, train_patterns)
                     loss.backward()
                     self.optimizer.step()
 
                 if test == True:
-                    train_loss, val_loss, test_loss = self.get_losses_value(train_patterns, validation_patterns, testset)
+                    train_loss, val_loss, test_loss = self.get_losses_value(train_patterns, validation_patterns, testset, fix_permutation)
                     self.update_losses_history(fold, epoch, train_loss, val_loss, test_loss)
                     if epoch % nprint == (nprint-1):
                         print('[folds-group: %d, epoch: %d]\t train loss: %.3f\t val loss: %.3f\t test loss: %.3f' %
                               (fold+1, epoch+1, train_loss, val_loss, test_loss))
                 else:
-                    train_loss, val_loss = self.get_losses_value(train_patterns, validation_patterns)
+                    train_loss, val_loss = self.get_losses_value(train_patterns, validation_patterns, fix_permutation)
                     self.update_losses_history(fold, epoch, train_loss, val_loss)
                     if epoch % nprint == (nprint-1):
                         print('[folds-group: %d, epoch: %d]\t train loss: %.3f\t val loss: %.3f' %

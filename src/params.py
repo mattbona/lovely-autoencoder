@@ -25,6 +25,7 @@ WEIGHT_DECAY = 0.1
 
 DATASET_PATH = './dataset/' # Path to train and test files
 STANDARDIZE_DATA = False
+FIX_PERMUTATION = False
 TRAIN_FILE = 'train' # Name of the .dat train file in the dataset dir
 TEST_FILE = 'test'   # Name of the .dat test file in the dataset dir
 
