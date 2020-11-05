@@ -55,7 +55,7 @@ def get_data_tensor_from_file(train_file_path, test_file_path='', standardize_da
                 train_patterns_list.append(row)
     else:
         sys.exit("ERROR: train file not found! Check the path.")
-
+        
     random.shuffle(train_patterns_list) # shuffle train data
     train_patterns = torch.FloatTensor(train_patterns_list)
     if standardize_data == True:
@@ -72,7 +72,6 @@ def get_data_tensor_from_file(train_file_path, test_file_path='', standardize_da
             sys.exit("ERROR: test file not found! Check the path.")
 
         test_patterns = torch.FloatTensor(test_patterns_list)
-
         if standardize_data == True:
             test_patterns = get_standardized_tensor(test_patterns)
 
