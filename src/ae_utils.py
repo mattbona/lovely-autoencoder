@@ -55,7 +55,7 @@ def get_data_tensor_from_file(train_file_path, test_file_path='', standardize_da
                 train_patterns_list.append(row)
     else:
         sys.exit("ERROR: train file not found! Check the path.")
-        
+
     random.shuffle(train_patterns_list) # shuffle train data
     train_patterns = torch.FloatTensor(train_patterns_list)
     if standardize_data == True:
@@ -115,7 +115,7 @@ def write_on_file_losses_average_stdev(history, file_path):
             test_dev_std = np.sqrt(test_var)
         else:
             test_dev_std = 0
-     
+
         means_stdevs = np.stack((train_mean, train_dev_std, val_mean, val_dev_std, test_mean, test_dev_std), axis=1)
     else:
         means_stdevs = np.stack((train_mean, train_dev_std, val_mean, val_dev_std), axis=1)
@@ -167,12 +167,6 @@ class Autoencoder:
             if self.activation_func == 'Sigmoid':
                 self.model.add_module('encode', torch.nn.Sigmoid())
             self.model.add_module('hidden_linear', torch.nn.Linear(self.central_hidden_dim, self.input_dim, bias=self.bias))
-            if self.activation_func == 'LeakyReLU':
-                self.model.add_module('decode', torch.nn.LeakyReLU())
-            if self.activation_func == 'ReLU':
-                self.model.add_module('decode',torch.nn.ReLU())
-            if self.activation_func == 'Sigmoid':
-                self.model.add_module('decode', torch.nn.Sigmoid())
         else:
             intermediate_hidden_dim = int(self.input_dim*1.1)
             self.model.add_module('input_linear', torch.nn.Linear(self.input_dim, intermediate_hidden_dim, bias=self.bias))
@@ -197,12 +191,6 @@ class Autoencoder:
             if self.activation_func == 'Sigmoid':
                 self.model.add_module('decode', torch.nn.Sigmoid())
             self.model.add_module('last_hidden_linear', torch.nn.Linear(intermediate_hidden_dim, self.input_dim, bias=self.bias))
-            if self.activation_func == 'LeakyReLU':
-                self.model.add_module('leakyrelu', torch.nn.LeakyReLU())
-            if self.activation_func == 'ReLU':
-                self.model.add_module('relu', torch.nn.ReLU())
-            if self.activation_func == 'Sigmoid':
-                self.model.add_module('sigmoid', torch.nn.Sigmoid())
 
         self.learning_rate = learning_rate
         self.momentum = momentum
