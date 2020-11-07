@@ -192,12 +192,6 @@ class Autoencoder:
             if self.activation_func == 'Sigmoid':
                 self.model.add_module('encode', torch.nn.Sigmoid())
             self.model.add_module('hidden_linear', torch.nn.Linear(self.central_hidden_dim, self.input_dim, bias=self.bias))
-            if self.activation_func == 'LeakyReLU':
-                self.model.add_module('decode', torch.nn.LeakyReLU())
-            if self.activation_func == 'ReLU':
-                self.model.add_module('decode',torch.nn.ReLU())
-            if self.activation_func == 'Sigmoid':
-                self.model.add_module('decode', torch.nn.Sigmoid())
         else:
             intermediate_hidden_dim = int(self.input_dim*1.1)
             self.model.add_module('input_linear', torch.nn.Linear(self.input_dim, intermediate_hidden_dim, bias=self.bias))
@@ -222,12 +216,6 @@ class Autoencoder:
             if self.activation_func == 'Sigmoid':
                 self.model.add_module('decode', torch.nn.Sigmoid())
             self.model.add_module('last_hidden_linear', torch.nn.Linear(intermediate_hidden_dim, self.input_dim, bias=self.bias))
-            if self.activation_func == 'LeakyReLU':
-                self.model.add_module('leakyrelu', torch.nn.LeakyReLU())
-            if self.activation_func == 'ReLU':
-                self.model.add_module('relu', torch.nn.ReLU())
-            if self.activation_func == 'Sigmoid':
-                self.model.add_module('sigmoid', torch.nn.Sigmoid())
 
         self.learning_rate = learning_rate
         self.momentum = momentum
