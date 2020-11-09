@@ -80,13 +80,13 @@ def get_data_tensor_from_file(train_file_path, test_file_path='', standardize_da
     return train_patterns
 def get_reconstructed_matrix_tensor_from_flattened_triangular(tensor, dim):
     triu_i = np.triu_indices(dim,1)
-    tril_i = np.tril_indices(dim, -1)
+    invert_triu_i = (triu_i[1],triu_i[0])
     matrix = np.zeros((dim,dim))
 
     reconstruted_matrix_tensor = torch.tensor(()).new_zeros(tensor.shape[0],dim,dim)
     for ifmatrix, flattened_matrix in enumerate(tensor):
         matrix[triu_i] = flattened_matrix
-        matrix[tril_i] = matrix[triu_i]
+        matrix[invert_triu_i] = matrix[triu_i]
         reconstruted_matrix_tensor[ifmatrix] = torch.from_numpy(matrix)
 
     return reconstruted_matrix_tensor
