@@ -96,6 +96,7 @@ def get_permuted_matrix_tensor_by_column_sum(tensor):
         sumCol = matrix.sum(axis=0)
         perm = np.argsort(sumCol)
         permuted_matrix_tensor[imatrix] = matrix[:,perm]
+        permuted_matrix_tensor[imatrix] = permuted_matrix_tensor[imatrix][perm]
 
     return permuted_matrix_tensor
 def get_flattened_permuted_matrix_tensor(tensor):
