@@ -101,7 +101,9 @@ def get_permuted_matrix_tensor_by_column_sum(tensor):
     return permuted_matrix_tensor
 def get_flattened_permuted_matrix_tensor(tensor):
     tensor = get_permuted_matrix_tensor_by_column_sum(tensor)
-    tensor = torch.flatten(tensor, start_dim=1)
+    triu_i = np.triu_indices(tensor.shape[1],1)
+    tensor = tensor[:,triu_i[0],triu_i[1]]
+
     return tensor
 
 def print_encoding_plot(encoding, encoding_dir):
